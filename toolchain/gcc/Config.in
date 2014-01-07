@@ -76,7 +76,7 @@ config INSTALL_GFORTRAN
 
 config INSTALL_GCCGO
 	bool
-	prompt "Build/install gccgo compiler?" if TOOLCHAINOPTS
+	prompt "Build/install gccgo compiler?" if TOOLCHAINOPTS && (GCC_VERSION_4_8_0 || GCC_VERSION_4_8_LINARO)
 	default n
 	help
 	    Build/install GNU gccgo compiler ?
