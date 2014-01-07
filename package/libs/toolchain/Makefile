@@ -233,6 +233,7 @@ define Package/libgo
 $(call Package/gcc/Default)
   TITLE:=Go support library
   DEPENDS+=@INSTALL_GCCGO
+  DEPENDS+=@USE_EGLIBC
 endef
 
 define Package/libgo/config
