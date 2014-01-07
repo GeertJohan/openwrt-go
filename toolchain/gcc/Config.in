@@ -75,8 +75,8 @@ config INSTALL_GFORTRAN
 	    Build/install GNU fortran compiler ?
 
 config INSTALL_GCCGO
-               bool
-               prompt "Build/install gccgo compiler?" if TOOLCHAINOPTS
-               default n
-               help
-                       Build/install GNU gccgo compiler ?
+	bool
+	prompt "Build/install gccgo compiler?" if TOOLCHAINOPTS
+	default n
+	help
+	    Build/install GNU gccgo compiler ?
