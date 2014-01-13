@@ -108,8 +108,8 @@ endef
 # $(2) = lowercase board name
 # $(3) = dts file
 ralink_default_fw_size_4M=3866624
-BuildFirmware/Default4M/squashfs=$(call BuildFirmware/OF,$(1),$(2),$(3),$(ralink_default_fw_size_4M))
-BuildFirmware/Default4M/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3))
+BuildFirmware/Default4M/squashfs=$(call BuildFirmware/OF,$(1),$(2),$(3),$(ralink_default_fw_size_4M),$(4))
+BuildFirmware/Default4M/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3),$(4))
 
 # Build images for default ralink layout for 8MB flash
 # kernel + roots = 0x7b0000
@@ -402,6 +402,13 @@ Image/Build/Profile/FREESTATION5=$(call BuildFirmware/Default8M/$(1),$(1),freest
 
 Image/Build/Profile/IP2202=$(call BuildFirmware/Default8M/$(1),$(1),ip2202,IP2202)
 
+BuildFirmware/HLKRM04/squashfs=$(call BuildFirmware/Default4M/squashfs,$(1),$(2),$(3),$(4))
+define BuildFirmware/HLKRM04/initramfs
+	$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3),$(4))
+	#mkhilinkfw -e -i$(call imgname,$(1),$(2))-uImage.bin -o $(call imgname,$(1),$(2))-factory.bin;
+endef
+Image/Build/Profile/HLKRM04=$(call BuildFirmware/HLKRM04/$(1),$(1),hlk-rm04,HLKRM04,HLK-RM02)
+
 Image/Build/Profile/M3=$(call BuildFirmware/Poray4M/$(1),$(1),m3,M3)
 
 Image/Build/Profile/M4=$(call BuildFirmware/PorayDualSize/$(1),$(1),m4,M4)
@@ -550,6 +557,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/FONERA20N,$(1))
 	$(call Image/Build/Profile/FREESTATION5,$(1))
 #	$(call Image/Build/Profile/HG255D,$(1))
+	$(call Image/Build/Profile/HLKRM04,$(1))
 	$(call Image/Build/Profile/HW550-3G,$(1))
 	$(call Image/Build/Profile/IP2202,$(1))
 	$(call Image/Build/Profile/M3,$(1))
@@ -622,8 +630,8 @@ Image/Build/Profile/MT7620a_MT7530=$(call BuildFirmware/Default8M/$(1),$(1),mt76
 Image/Build/Profile/MT7620a_V22SG=$(call BuildFirmware/Default8M/$(1),$(1),mt7620a_v22sg,MT7620a_V22SG)
 Image/Build/Profile/RP-N53=$(call BuildFirmware/Default8M/$(1),$(1),rp_n53,RP-N53)
 whr_300hp2_mtd_size=7012352
-Image/Build/Profile/WHR-300HP2=$(call BuildFirmware/CustomFlash/$(1),$(1),whr-300hp2,WHR-300HP2,$(whr_300hp2_mtd_size))
-Image/Build/Profile/WHR-600D=$(call BuildFirmware/CustomFlash/$(1),$(1),whr-600d,WHR-600D,$(whr_300hp2_mtd_size))
+Image/Build/Profile/WHR300HP2=$(call BuildFirmware/CustomFlash/$(1),$(1),whr-300hp2,WHR-300HP2,$(whr_300hp2_mtd_size))
+Image/Build/Profile/WHR600D=$(call BuildFirmware/CustomFlash/$(1),$(1),whr-600d,WHR-600D,$(whr_300hp2_mtd_size))
 dlink810l_mtd_size=6881280
 Image/Build/Profile/DIR-810L=$(call BuildFirmware/CustomFlash/$(1),$(1),dir-810l,DIR-810L,$(dlink810l_mtd_size))
 
@@ -635,8 +643,8 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/MT7620a_V22SG,$(1))
 	$(call Image/Build/Profile/RP-N53,$(1))
 	$(call Image/Build/Profile/DIR-810L,$(1))
-	$(call Image/Build/Profile/WHR-300HP2,$(1))
-	$(call Image/Build/Profile/WHR-600D,$(1))
+	$(call Image/Build/Profile/WHR300HP2,$(1))
+	$(call Image/Build/Profile/WHR600D,$(1))
 endef
 endif
 
