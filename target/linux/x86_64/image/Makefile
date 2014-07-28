@@ -145,9 +145,13 @@ ifneq ($(CONFIG_VMDK_IMAGES),)
     # left here because the image builder doesnt need these
     ifeq ($(1),ext4)
 		rm $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vmdk || true
-		qemu-img convert -f raw -O vmdk \
+		qemu-img convert -f raw -O vmdk -o adapter_type=lsilogic \
 			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
 			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vmdk
+		rm $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1)-esxi.vmdk || true
+		qemu-img convert -f raw -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat \
+			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
+			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1)-esxi.vmdk
     endif
   endef
 endif
@@ -208,3 +212,7 @@ endif
 endef
 
 $(eval $(call BuildImage))
+
+$(eval $(call RequireCommand,qemu-img, \
+	Please install qemu-img (package qemu-utils in Ubuntu/Debian). \
+))

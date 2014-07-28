@@ -37,6 +37,9 @@
 #define WDR4300_GPIO_BTN_WPS		16
 #define WDR4300_GPIO_BTN_RFKILL		17
 
+#define WDR4300_GPIO_EXTERNAL_LNA0	18
+#define WDR4300_GPIO_EXTERNAL_LNA1	19
+
 #define WDR4300_GPIO_USB1_POWER		22
 #define WDR4300_GPIO_USB2_POWER		21
 
@@ -103,6 +106,14 @@ static struct gpio_keys_button wdr4300_gpio_keys[] __initdata = {
 	},
 };
 
+static const struct ar8327_led_info wdr4300_leds_ar8327[] __initconst = {
+	AR8327_LED_INFO(PHY0_0, HW, "tp-link:blue:wan"),
+	AR8327_LED_INFO(PHY1_0, HW, "tp-link:blue:lan1"),
+	AR8327_LED_INFO(PHY2_0, HW, "tp-link:blue:lan2"),
+	AR8327_LED_INFO(PHY3_0, HW, "tp-link:blue:lan3"),
+	AR8327_LED_INFO(PHY4_0, HW, "tp-link:blue:lan4"),
+};
+
 static struct ar8327_pad_cfg wdr4300_ar8327_pad0_cfg = {
 	.mode = AR8327_PAD_MAC_RGMII,
 	.txclk_delay_en = true,
@@ -129,6 +140,8 @@ static struct ar8327_platform_data wdr4300_ar8327_data = {
 		.rxpause = 1,
 	},
 	.led_cfg = &wdr4300_ar8327_led_cfg,
+	.num_leds = ARRAY_SIZE(wdr4300_leds_ar8327),
+	.leds = wdr4300_leds_ar8327,
 };
 
 static struct mdio_board_info wdr4300_mdio0_info[] = {
@@ -151,6 +164,9 @@ static void __init wdr4300_setup(void)
 	ath79_register_gpio_keys_polled(-1, WDR4300_KEYS_POLL_INTERVAL,
 					ARRAY_SIZE(wdr4300_gpio_keys),
 					wdr4300_gpio_keys);
+
+	ath79_wmac_set_ext_lna_gpio(0, WDR4300_GPIO_EXTERNAL_LNA0);
+	ath79_wmac_set_ext_lna_gpio(1, WDR4300_GPIO_EXTERNAL_LNA1);
 
 	ath79_init_mac(tmpmac, mac, -1);
 	ath79_register_wmac(art + WDR4300_WMAC_CALDATA_OFFSET, tmpmac);

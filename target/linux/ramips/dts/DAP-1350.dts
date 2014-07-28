@@ -34,7 +34,7 @@
 			read-only;
 		};
 
-		partition@30000 {
+		devdata: partition@30000 {
 			label = "devdata";
 			reg = <0x30000 0x10000>;
 			read-only;
@@ -58,8 +58,16 @@
 		};
 	};
 
+	ethernet@10100000 {
+		mtd-mac-address = <&devdata 0x2e>;
+	};
+
 	esw@10110000 {
 		ralink,portmap = <0x2f>;
+	};
+
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&devdata 0>;
 	};
 
 	gpio-leds {

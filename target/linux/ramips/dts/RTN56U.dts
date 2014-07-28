@@ -43,12 +43,20 @@
 		host-bridge {
 			pci-bridge@1 {
 				status = "okay";
+				wmac@0,0 {
+                                        compatible = "ralink,rt2880-pci", "pciclass060400", "pciclass0604";
+                                        reg = < 0x10000 0 0 0 0 >;
+                                        ralink,eeprom = "rt2x00pci_1_0.eeprom";
+                                };
+
 			};
 		};
 	};
 
 	wmac@10180000 {
+		status = "okay";
 		ralink,2ghz = <0>;
+		ralink,mtd-eeprom = <&factory 0>;
 	};
 
 	ehci@101c0000 {
@@ -79,7 +87,7 @@
 			read-only;
 		};
 
-		partition@40000 {
+		factory: partition@40000 {
 			reg = <0x00040000 0x00010000>;
 			label = "factory";
 			read-only;

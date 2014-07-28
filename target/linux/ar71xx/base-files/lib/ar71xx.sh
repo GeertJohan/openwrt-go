@@ -91,6 +91,15 @@ tplink_board_detect() {
 	hwver="v${hwver#0}"
 
 	case "$hwid" in
+	"015000"*)
+		model="EasyLink EL-M150"
+		;;
+	"015300"*)
+		model="EasyLink EL-MINI"
+		;;
+	"3C0001"*)
+		model="OOLITE"
+		;;
 	"070300"*)
 		model="TP-Link TL-WR703N"
 		;;
@@ -103,6 +112,9 @@ tplink_board_detect() {
 	"070100"*)
 		model="TP-Link TL-WA701N/ND"
 		;;
+	"073000"*)
+		model="TP-Link TL-WA730RE"
+		;;
 	"074000"*)
 		model="TP-Link TL-WR740N/ND"
 		;;
@@ -114,6 +126,9 @@ tplink_board_detect() {
 		;;
 	"075000"*)
 		model="TP-Link TL-WA750RE"
+		;;
+	"751000"*)
+		model="TP-Link TL-WA7510N"
 		;;
 	"080100"*)
 		model="TP-Link TL-WA801N/ND"
@@ -129,6 +144,9 @@ tplink_board_detect() {
 		;;
 	"085000"*)
 		model="TP-Link TL-WA850RE"
+		;;
+	"086000"*)
+		model="TP-Link TL-WA860RE"
 		;;
 	"090100"*)
 		model="TP-Link TL-WA901N/ND"
@@ -180,8 +198,15 @@ tplink_board_detect() {
 	"430000"*)
 		model="TP-Link TL-WDR4300"
 		;;
+	"430080"*)
+		iw reg set IL
+		model="TP-Link TL-WDR4300 (IL)"
+		;;
 	"431000"*)
 		model="TP-Link TL-WDR4310"
+		;;
+	"49000002")
+		model="TP-Link TL-WDR4900"
 		;;
 	"453000"*)
 		model="MERCURY MW4530R"
@@ -201,6 +226,12 @@ ar71xx_board_detect() {
 	machine=$(awk 'BEGIN{FS="[ \t]+:[ \t]"} /machine/ {print $2}' /proc/cpuinfo)
 
 	case "$machine" in
+	*"Oolite V1.0")
+		name="oolite"
+		;;
+	*"AirGateway")
+		name="airgateway"
+		;;
 	*"AirRouter")
 		name="airrouter"
 		;;
@@ -246,6 +277,9 @@ ar71xx_board_detect() {
 	*AP83)
 		name="ap83"
 		;;
+	*"Archer C5")
+		name="archer-c5"
+		;;
 	*"Archer C7")
 		name="archer-c7"
 		;;
@@ -267,6 +301,9 @@ ar71xx_board_detect() {
 	*"DIR-600 rev. A1")
 		name="dir-600-a1"
 		;;
+	*"DIR-615 rev. E1")
+		name="dir-615-e1"
+		;;
 	*"DIR-615 rev. E4")
 		name="dir-615-e4"
 		;;
@@ -279,8 +316,29 @@ ar71xx_board_detect() {
 	*"DIR-835 rev. A1")
 		name="dir-835-a1"
 		;;
+	*"Dragino v2")
+		name="dragino2"
+		;;
+	*"EAP300 v2")
+		name="eap300v2"
+		;;
 	*EAP7660D)
 		name="eap7660d"
+		;;
+	*EL-M150)
+		name="el-m150"
+		;;
+	*EL-MINI)
+		name="el-mini"
+		;;
+	*"GL-CONNECT INET v1")
+		name="gl-inet"
+		;;
+	*"EnGenius ESR1750")
+		name="esr1750"
+		;;
+	*"EnGenius ESR900")
+		name="esr900"
 		;;
 	*JA76PF)
 		name="ja76pf"
@@ -293,6 +351,9 @@ ar71xx_board_detect() {
 		;;
 	*"Nanostation M")
 		name="nanostation-m"
+		;;
+	*"Nanostation M XW")
+		name="nanostation-m-xw"
 		;;
 	*JWAP003)
 		name="jwap003"
@@ -336,14 +397,26 @@ ar71xx_board_detect() {
 	*"NBG460N/550N/550NH")
 		name="nbg460n_550n_550nh"
 		;;
+	*"Zyxel NBG6716")
+		name="nbg6716"
+		;;
 	*OM2P)
 		name="om2p"
+		;;
+	*OM2Pv2)
+		name="om2pv2"
 		;;
 	*"OM2P HS")
 		name="om2p-hs"
 		;;
+	*"OM2P HSv2")
+		name="om2p-hsv2"
+		;;
 	*"OM2P LC")
 		name="om2p-lc"
+		;;
+	*OM5P)
+		name="om5p"
 		;;
 	*PB42)
 		name="pb42"
@@ -393,8 +466,23 @@ ar71xx_board_detect() {
 	*"RouterBOARD 751G")
 		name="rb-751g"
 		;;
+	*"RouterBOARD 911G-2HPnD")
+		name="rb-911g-2hpnd"
+		;;
+	*"RouterBOARD 911G-5HPnD")
+		name="rb-911g-5hpnd"
+		;;
+	*"RouterBOARD 912UAG-2HPnD")
+		name="rb-912uag-2hpnd"
+		;;
+	*"RouterBOARD 912UAG-5HPnD")
+		name="rb-912uag-5hpnd"
+		;;
 	*"RouterBOARD 951G-2HnD")
 		name="rb-951g-2hnd"
+		;;
+	*"RouterBOARD 951Ui-2HnD")
+		name="rb-951ui-2hnd"
 		;;
 	*"RouterBOARD 2011L")
 		name="rb-2011l"
@@ -402,8 +490,17 @@ ar71xx_board_detect() {
 	*"RouterBOARD 2011UAS")
 		name="rb-2011uas"
 		;;
+	*"RouterBOARD 2011UiAS")
+		name="rb-2011uias"
+		;;
 	*"RouterBOARD 2011UAS-2HnD")
 		name="rb-2011uas-2hnd"
+		;;
+	*"RouterBOARD SXT Lite2")
+		name="rb-sxt2n"
+		;;
+	*"RouterBOARD SXT Lite5")
+		name="rb-sxt5n"
 		;;
 	*"Rocket M")
 		name="rocket-m"
@@ -468,11 +565,14 @@ ar71xx_board_detect() {
 	*TL-WA750RE)
 		name="tl-wa750re"
 		;;
-	*TL-WA7510N)
+	*"TL-WA7510N v1")
 		name="tl-wa7510n"
 		;;
 	*TL-WA850RE)
 		name="tl-wa850re"
+		;;
+	*"TL-WA830RE v2")
+		name="tl-wa830re-v2"
 		;;
 	*"TL-WA801ND v2")
 		name="tl-wa801nd-v2"
@@ -492,6 +592,9 @@ ar71xx_board_detect() {
 	*"TL-WDR3600/4300/4310")
 		name="tl-wdr4300"
 		;;
+	*"TL-WDR4900 v2")
+		name="tl-wdr4900-v2"
+		;;
 	*TL-WR741ND)
 		name="tl-wr741nd"
 		;;
@@ -506,6 +609,9 @@ ar71xx_board_detect() {
 		;;
 	*"TL-WR841N/ND v8")
 		name="tl-wr841n-v8"
+		;;
+	*"TL-WR841N/ND v9")
+		name="tl-wr841n-v9"
 		;;
 	*"TL-WR842N/ND v2")
 		name="tl-wr842n-v2"
@@ -530,6 +636,9 @@ ar71xx_board_detect() {
 		;;
 	*"TL-MR13U")
 		name="tl-mr13u"
+		;;
+	*"Tube2H")
+		name="tube2h"
 		;;
 	*UniFi)
 		name="unifi"
@@ -560,6 +669,9 @@ ar71xx_board_detect() {
 		;;
 	*"WNDR3700/WNDR3800/WNDRMAC")
 		wndr3700_board_detect "$machine"
+		;;
+	*"WNDR3700v4")
+		name="wndr3700v4"
 		;;
 	*"WNDR4300")
 		name="wndr4300"
@@ -617,6 +729,9 @@ ar71xx_board_detect() {
 		;;
 	*"BHU BXU2000n-2 rev. A1")
 		name="bxu2000n-2-a1"
+		;;
+	*"HiWiFi HC6361")
+		name="hiwifi-hc6361"
 		;;
 	esac
 

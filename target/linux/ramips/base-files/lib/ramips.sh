@@ -13,6 +13,9 @@ ramips_board_detect() {
 	machine=$(awk 'BEGIN{FS="[ \t]+:[ \t]"} /machine/ {print $2}' /proc/cpuinfo)
 
 	case "$machine" in
+	*"7Links PX-4885")
+		name="px4885"
+		;;
 	*"8devices Carambola")
 		name="carambola"
 		;;
@@ -21,6 +24,9 @@ ramips_board_detect() {
 		;;
 	*"Edimax 3g-6200nl")
 		name="3g-6200nl"
+		;;
+	*"Airlink101 AR725W")
+		name="ar725w"
 		;;
 	*"AirLive Air3GII")
 		name="air3gii"
@@ -49,8 +55,11 @@ ramips_board_detect() {
 	*"AsiaRF AWM002 EVB")
 		name="awm002-evb"
 		;;
-	*"BR6524N")
-		name="br6524n"
+	*"AsiaRF AWM003 EVB")
+		name="awm003-evb"
+		;;
+	*"AsiaRF AWAPN2403")
+		name="awapn2403"
 		;;
 	*"Asus WL-330N")
 		name="wl-330n"
@@ -63,6 +72,9 @@ ramips_board_detect() {
 		;;
 	*"Aztech HW550-3G")
 		name="hw550-3g"
+		;;
+	*"CY-SWR1100")
+		name="cy-swr1100"
 		;;
 	*"DCS-930")
 		name="dcs-930"
@@ -148,6 +160,12 @@ ramips_board_detect() {
 	*"HAME MPR-A2")
  		name="mpr-a2"
  		;;
+	*"Kingston MLW221")
+		name="mlw221"
+		;;
+	*"Planex MZK-750DHP")
+		name="mzk-750dhp"
+		;;
 	*"NBG-419N")
 		name="nbg-419n"
 		;;
@@ -205,6 +223,9 @@ ramips_board_detect() {
 	*"RT-N56U")
 		name="rt-n56u"
 		;;
+	*"RUT5XX")
+		name="rut5xx"
+		;;
 	*"Skyline SL-R7205"*)
 		name="sl-r7205"
 		;;
@@ -225,6 +246,9 @@ ramips_board_detect() {
 		;;
 	*"WHR-600D")
 		name="whr-600d"
+		;;
+	*"WHR-1166D")
+		name="whr-1166d"
 		;;
 	*"WHR-G300N")
 		name="whr-g300n"
@@ -279,6 +303,21 @@ ramips_board_detect() {
 		;;
 	*"V22SG")
 		name="v22sg"
+		;;
+	*"WRTNODE")
+		name="wrtnode"
+		;;
+	*"Wansview NCS601W")
+		name="ncs601w"
+		;;
+	*"Sercomm NA930")
+		name="na930"
+		;;
+	*"Zbtlink ZBT-WA05")
+		name="zbt-wa05"
+		;;
+	*"ZBT WR8305RT")
+		name="wr8305rt"
 		;;
 	*)
 		name="generic"

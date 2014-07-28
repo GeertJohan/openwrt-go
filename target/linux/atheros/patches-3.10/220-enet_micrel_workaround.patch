@@ -1,14 +1,14 @@
---- a/drivers/net/ethernet/ar231x/ar231x.c
-+++ b/drivers/net/ethernet/ar231x/ar231x.c
-@@ -150,6 +150,7 @@ static int ar231x_mdiobus_write(struct m
+--- a/drivers/net/ethernet/atheros/ar231x/ar231x.c
++++ b/drivers/net/ethernet/atheros/ar231x/ar231x.c
+@@ -148,6 +148,7 @@ static int ar231x_mdiobus_write(struct m
  static int ar231x_mdiobus_reset(struct mii_bus *bus);
- static int ar231x_mdiobus_probe (struct net_device *dev);
+ static int ar231x_mdiobus_probe(struct net_device *dev);
  static void ar231x_adjust_link(struct net_device *dev);
-+static bool no_phy = false;
++static bool no_phy;
  
  #ifndef ERR
  #define ERR(fmt, args...) printk("%s: " fmt, __func__, ##args)
-@@ -182,6 +183,30 @@ static const struct net_device_ops ar231
+@@ -180,6 +181,32 @@ static const struct net_device_ops ar231
  #endif
  };
  
@@ -16,8 +16,10 @@
 +{
 +	int phy_reg;
 +
-+	/* Grab the bits from PHYIR1, and put them
-+	 * in the upper half */
++	/**
++	 * Grab the bits from PHYIR1, and put them
++	 * in the upper half.
++	 */
 +	phy_reg = mdiobus_read(bus, addr, MII_PHYSID1);
 +
 +	if (phy_reg < 0)
@@ -36,15 +38,17 @@
 +	return 0;
 +}
 +
- int ar231x_probe(struct platform_device *pdev)
+ static int ar231x_probe(struct platform_device *pdev)
  {
  	struct net_device *dev;
-@@ -299,6 +324,21 @@ int ar231x_probe(struct platform_device
+@@ -286,6 +313,23 @@ static int ar231x_probe(struct platform_
  
  	mdiobus_register(sp->mii_bus);
  
-+	/* Workaround for Micrel switch, which is only available on
-+	 * one PHY and cannot be configured through MDIO */
++	/**
++	 * Workaround for Micrel switch, which is only available on
++	 * one PHY and cannot be configured through MDIO.
++	 */
 +	if (!no_phy) {
 +		u32 phy_id = 0;
 +		get_phy_id(sp->mii_bus, 1, &phy_id);
@@ -61,7 +65,7 @@
  	if (ar231x_mdiobus_probe(dev) != 0) {
  		printk(KERN_ERR "%s: mdiobus_probe failed\n", dev->name);
  		rx_tasklet_cleanup(dev);
-@@ -355,8 +395,10 @@ static int ar231x_remove(struct platform
+@@ -342,8 +386,10 @@ static int ar231x_remove(struct platform
  	rx_tasklet_cleanup(dev);
  	ar231x_init_cleanup(dev);
  	unregister_netdev(dev);
@@ -74,7 +78,7 @@
  	kfree(dev);
  	return 0;
  }
-@@ -1132,6 +1174,9 @@ static int ar231x_ioctl(struct net_devic
+@@ -1104,6 +1150,9 @@ static int ar231x_ioctl(struct net_devic
  	struct ar231x_private *sp = netdev_priv(dev);
  	int ret;
  
@@ -82,5 +86,5 @@
 +		return -ENODEV;
 +
  	switch (cmd) {
- 
  	case SIOCETHTOOL:
+ 		spin_lock_irq(&sp->lock);

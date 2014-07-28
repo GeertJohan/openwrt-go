@@ -1,38 +1,39 @@
---- a/drivers/net/ethernet/Kconfig
-+++ b/drivers/net/ethernet/Kconfig
-@@ -22,6 +22,7 @@ source "drivers/net/ethernet/adaptec/Kco
- source "drivers/net/ethernet/aeroflex/Kconfig"
- source "drivers/net/ethernet/alteon/Kconfig"
- source "drivers/net/ethernet/amd/Kconfig"
-+source "drivers/net/ethernet/ar231x/Kconfig"
- source "drivers/net/ethernet/apple/Kconfig"
- source "drivers/net/ethernet/atheros/Kconfig"
- source "drivers/net/ethernet/cadence/Kconfig"
---- a/drivers/net/ethernet/Makefile
-+++ b/drivers/net/ethernet/Makefile
-@@ -9,6 +9,7 @@ obj-$(CONFIG_GRETH) += aeroflex/
- obj-$(CONFIG_NET_VENDOR_ALTEON) += alteon/
- obj-$(CONFIG_NET_VENDOR_AMD) += amd/
- obj-$(CONFIG_NET_VENDOR_APPLE) += apple/
-+obj-$(CONFIG_NET_VENDOR_AR231X) += ar231x/
- obj-$(CONFIG_NET_VENDOR_ATHEROS) += atheros/
- obj-$(CONFIG_NET_CADENCE) += cadence/
- obj-$(CONFIG_NET_BFIN) += adi/
---- /dev/null
-+++ b/drivers/net/ethernet/ar231x/Kconfig
-@@ -0,0 +1,5 @@
-+config NET_VENDOR_AR231X
-+	tristate "AR231X Ethernet support"
+--- a/drivers/net/ethernet/atheros/Makefile
++++ b/drivers/net/ethernet/atheros/Makefile
+@@ -7,3 +7,4 @@ obj-$(CONFIG_ATL2) += atlx/
+ obj-$(CONFIG_ATL1E) += atl1e/
+ obj-$(CONFIG_ATL1C) += atl1c/
+ obj-$(CONFIG_ALX) += alx/
++obj-$(CONFIG_NET_AR231X) += ar231x/
+--- a/drivers/net/ethernet/atheros/Kconfig
++++ b/drivers/net/ethernet/atheros/Kconfig
+@@ -5,7 +5,7 @@
+ config NET_VENDOR_ATHEROS
+ 	bool "Atheros devices"
+ 	default y
+-	depends on PCI
++	depends on (PCI || ATHEROS_AR231X)
+ 	---help---
+ 	  If you have a network (Ethernet) card belonging to this class, say Y
+ 	  and read the Ethernet-HOWTO, available from
+@@ -85,4 +85,10 @@ config ALX
+ 	  To compile this driver as a module, choose M here.  The module
+ 	  will be called alx.
+ 
++config NET_AR231X
++	tristate "Atheros AR231X built-in Ethernet support"
 +	depends on ATHEROS_AR231X
 +	help
 +	  Support for the AR231x/531x ethernet controller
++
+ endif # NET_VENDOR_ATHEROS
 --- /dev/null
-+++ b/drivers/net/ethernet/ar231x/Makefile
++++ b/drivers/net/ethernet/atheros/ar231x/Makefile
 @@ -0,0 +1 @@
-+obj-$(CONFIG_NET_VENDOR_AR231X) += ar231x.o
++obj-$(CONFIG_NET_AR231X) += ar231x.o
 --- /dev/null
-+++ b/drivers/net/ethernet/ar231x/ar231x.c
-@@ -0,0 +1,1278 @@
++++ b/drivers/net/ethernet/atheros/ar231x/ar231x.c
+@@ -0,0 +1,1250 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -49,8 +50,8 @@
 + * (at your option) any later version.
 + *
 + * Additional credits:
-+ * 	This code is taken from John Taylor's Sibyte driver and then
-+ * 	modified for the AR2313.
++ * This code is taken from John Taylor's Sibyte driver and then
++ * modified for the AR2313.
 + */
 +
 +#include <linux/module.h>
@@ -75,15 +76,11 @@
 +#include <linux/ethtool.h>
 +#include <linux/ctype.h>
 +#include <linux/platform_device.h>
++#include <linux/io.h>
++#include <linux/uaccess.h>
 +
 +#include <net/sock.h>
 +#include <net/ip.h>
-+
-+#include <asm/io.h>
-+#include <asm/irq.h>
-+#include <asm/byteorder.h>
-+#include <asm/uaccess.h>
-+#include <asm/bootinfo.h>
 +
 +#define AR2313_MTU                     1692
 +#define AR2313_PRIOS                   1
@@ -92,7 +89,7 @@
 +
 +
 +#ifndef min
-+#define min(a,b)	(((a)<(b))?(a):(b))
++#define min(a, b)	(((a) < (b)) ? (a) : (b))
 +#endif
 +
 +#ifndef SMP_CACHE_BYTES
@@ -103,7 +100,7 @@
 +
 +#include "ar231x.h"
 +
-+/*
++/**
 + * New interrupt handler strategy:
 + *
 + * An old interrupt handler worked using the traditional method of
@@ -142,7 +139,7 @@
 + * handler.
 + */
 +
-+/*
++/**
 + * Threshold values for RX buffer allocation - the low water marks for
 + * when to start refilling the rings are set to 75% of the ring
 + * sizes. It seems to make sense to refill the rings entirely from the
@@ -163,7 +160,8 @@
 +#define VLAN_HDR                0
 +#endif
 +
-+#define AR2313_BUFSIZE		(AR2313_MTU + VLAN_HDR + ETH_HLEN + CRC_LEN + RX_OFFSET)
++#define AR2313_BUFSIZE		(AR2313_MTU + VLAN_HDR + ETH_HLEN + CRC_LEN + \
++				 RX_OFFSET)
 +
 +#ifdef MODULE
 +MODULE_LICENSE("GPL");
@@ -173,7 +171,7 @@
 +
 +#define virt_to_phys(x) ((u32)(x) & 0x1fffffff)
 +
-+// prototypes
++/* prototypes */
 +static void ar231x_halt(struct net_device *dev);
 +static void rx_tasklet_func(unsigned long data);
 +static void rx_tasklet_cleanup(struct net_device *dev);
@@ -181,9 +179,10 @@
 +static void ar231x_tx_timeout(struct net_device *dev);
 +
 +static int ar231x_mdiobus_read(struct mii_bus *bus, int phy_addr, int regnum);
-+static int ar231x_mdiobus_write(struct mii_bus *bus, int phy_addr, int regnum, u16 value);
++static int ar231x_mdiobus_write(struct mii_bus *bus, int phy_addr, int regnum,
++				u16 value);
 +static int ar231x_mdiobus_reset(struct mii_bus *bus);
-+static int ar231x_mdiobus_probe (struct net_device *dev);
++static int ar231x_mdiobus_probe(struct net_device *dev);
 +static void ar231x_adjust_link(struct net_device *dev);
 +
 +#ifndef ERR
@@ -194,30 +193,30 @@
 +static void
 +ar231x_netpoll(struct net_device *dev)
 +{
-+      unsigned long flags;
++	unsigned long flags;
 +
-+      local_irq_save(flags);
-+      ar231x_interrupt(dev->irq, dev);
-+      local_irq_restore(flags);
++	local_irq_save(flags);
++	ar231x_interrupt(dev->irq, dev);
++	local_irq_restore(flags);
 +}
 +#endif
 +
 +static const struct net_device_ops ar231x_ops = {
-+	.ndo_open 		= ar231x_open,
-+	.ndo_stop 		= ar231x_close,
-+	.ndo_start_xmit 	= ar231x_start_xmit,
-+	.ndo_set_rx_mode	 = ar231x_multicast_list,
-+	.ndo_do_ioctl 		= ar231x_ioctl,
-+	.ndo_change_mtu 	= eth_change_mtu,
++	.ndo_open		= ar231x_open,
++	.ndo_stop		= ar231x_close,
++	.ndo_start_xmit		= ar231x_start_xmit,
++	.ndo_set_rx_mode	= ar231x_multicast_list,
++	.ndo_do_ioctl		= ar231x_ioctl,
++	.ndo_change_mtu		= eth_change_mtu,
 +	.ndo_validate_addr	= eth_validate_addr,
-+	.ndo_set_mac_address 	= eth_mac_addr,
++	.ndo_set_mac_address	= eth_mac_addr,
 +	.ndo_tx_timeout		= ar231x_tx_timeout,
 +#ifdef CONFIG_NET_POLL_CONTROLLER
 +	.ndo_poll_controller	= ar231x_netpoll,
 +#endif
 +};
 +
-+int ar231x_probe(struct platform_device *pdev)
++static int ar231x_probe(struct platform_device *pdev)
 +{
 +	struct net_device *dev;
 +	struct ar231x_private *sp;
@@ -258,53 +257,44 @@
 +	tasklet_init(&sp->rx_tasklet, rx_tasklet_func, (unsigned long) dev);
 +	tasklet_disable(&sp->rx_tasklet);
 +
-+	sp->eth_regs =
-+		ioremap_nocache(virt_to_phys(ar_eth_base), sizeof(*sp->eth_regs));
++	sp->eth_regs = ioremap_nocache(ar_eth_base, sizeof(*sp->eth_regs));
 +	if (!sp->eth_regs) {
 +		printk("Can't remap eth registers\n");
-+		return (-ENXIO);
++		return -ENXIO;
 +	}
 +
-+	/*
++	/**
 +	 * When there's only one MAC, PHY regs are typically on ENET0,
 +	 * even though the MAC might be on ENET1.
-+	 * Needto remap PHY regs separately in this case
++	 * So remap PHY regs separately.
 +	 */
-+	if (virt_to_phys(ar_eth_base) == virt_to_phys(sp->phy_regs))
-+		sp->phy_regs = sp->eth_regs;
-+	else {
-+		sp->phy_regs =
-+			ioremap_nocache(virt_to_phys(sp->cfg->phy_base),
-+							sizeof(*sp->phy_regs));
-+		if (!sp->phy_regs) {
-+			printk("Can't remap phy registers\n");
-+			return (-ENXIO);
-+		}
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "eth0_mii");
++	if (!res) {
++		res = platform_get_resource_byname(pdev, IORESOURCE_MEM,
++						   "eth1_mii");
++		if (!res)
++			return -ENODEV;
++	}
++	sp->phy_regs = ioremap_nocache(res->start, resource_size(res));
++	if (!sp->phy_regs) {
++		printk("Can't remap phy registers\n");
++		return -ENXIO;
 +	}
 +
-+	sp->dma_regs =
-+		ioremap_nocache(virt_to_phys(ar_eth_base + 0x1000),
-+						sizeof(*sp->dma_regs));
-+	dev->base_addr = (unsigned int) sp->dma_regs;
++	sp->dma_regs = ioremap_nocache(ar_eth_base + 0x1000,
++				       sizeof(*sp->dma_regs));
 +	if (!sp->dma_regs) {
 +		printk("Can't remap DMA registers\n");
-+		return (-ENXIO);
++		return -ENXIO;
 +	}
-+
-+	sp->int_regs = ioremap_nocache(virt_to_phys(sp->cfg->reset_base), 4);
-+	if (!sp->int_regs) {
-+		printk("Can't remap INTERRUPT registers\n");
-+		return (-ENXIO);
-+	}
++	dev->base_addr = ar_eth_base + 0x1000;
 +
 +	strncpy(sp->name, "Atheros AR231x", sizeof(sp->name) - 1);
 +	sp->name[sizeof(sp->name) - 1] = '\0';
 +	memcpy(dev->dev_addr, sp->cfg->macaddr, 6);
 +
 +	if (ar231x_init(dev)) {
-+		/*
-+		 * ar231x_init() calls ar231x_init_cleanup() on error.
-+		 */
++		/* ar231x_init() calls ar231x_init_cleanup() on error */
 +		kfree(dev);
 +		return -ENODEV;
 +	}
@@ -314,10 +304,8 @@
 +		return -1;
 +	}
 +
-+	printk("%s: %s: %02x:%02x:%02x:%02x:%02x:%02x, irq %d\n",
-+		   dev->name, sp->name,
-+		   dev->dev_addr[0], dev->dev_addr[1], dev->dev_addr[2],
-+		   dev->dev_addr[3], dev->dev_addr[4], dev->dev_addr[5], dev->irq);
++	printk("%s: %s: %pM, irq %d\n", dev->name, sp->name, dev->dev_addr,
++	       dev->irq);
 +
 +	sp->mii_bus = mdiobus_alloc();
 +	if (sp->mii_bus == NULL)
@@ -373,7 +361,7 @@
 +{
 +	struct ar231x_private *sp = netdev_priv(dev);
 +
-+	/*
++	/**
 +	 * Tasklet may be scheduled. Need to get it removed from the list
 +	 * since we're about to free the struct.
 +	 */
@@ -397,7 +385,7 @@
 +}
 +
 +
-+/*
++/**
 + * Restart the AR2313 ethernet controller.
 + */
 +static int ar231x_restart(struct net_device *dev)
@@ -429,7 +417,7 @@
 +{
 +	struct ar231x_private *sp = netdev_priv(dev);
 +	if (sp->rx_ring != NULL) {
-+		kfree((void *) KSEG0ADDR(sp->rx_ring));
++		kfree((void *)KSEG0ADDR(sp->rx_ring));
 +		sp->rx_ring = NULL;
 +		sp->tx_ring = NULL;
 +	}
@@ -444,12 +432,11 @@
 +	ar231x_descr_t *space;
 +
 +	if (sp->rx_ring != NULL) {
-+		printk("%s: already done.\n", __FUNCTION__);
++		printk("%s: already done.\n", __func__);
 +		return 0;
 +	}
 +
-+	size =
-+		(sizeof(ar231x_descr_t) * (AR2313_DESCR_ENTRIES * AR2313_QUEUES));
++	size = sizeof(ar231x_descr_t) * (AR2313_DESCR_ENTRIES * AR2313_QUEUES);
 +	space = kmalloc(size, GFP_KERNEL);
 +	if (space == NULL)
 +		return 1;
@@ -458,9 +445,9 @@
 +	dma_cache_inv((unsigned int) space, size);
 +
 +	/* now convert pointer to KSEG1 */
-+	space = (ar231x_descr_t *) KSEG1ADDR(space);
++	space = (ar231x_descr_t *)KSEG1ADDR(space);
 +
-+	memset((void *) space, 0, size);
++	memset((void *)space, 0, size);
 +
 +	sp->rx_ring = space;
 +	space += AR2313_DESCR_ENTRIES;
@@ -474,16 +461,14 @@
 +		td->status = 0;
 +		td->devcs = DMA_TX1_CHAINED;
 +		td->addr = 0;
-+		td->descr =
-+			virt_to_phys(&sp->
-+						 tx_ring[(j + 1) & (AR2313_DESCR_ENTRIES - 1)]);
++		td->descr = virt_to_phys(&sp->tx_ring[DSC_NEXT(j)]);
 +	}
 +
 +	return 0;
 +}
 +
 +
-+/*
++/**
 + * Generic cleanup handling data allocated during init. Used when the
 + * module is unloaded or if an error occurs during initialization
 + */
@@ -496,9 +481,11 @@
 +	ar231x_free_descriptors(dev);
 +
 +	if (sp->eth_regs)
-+		iounmap((void *) sp->eth_regs);
++		iounmap((void *)sp->eth_regs);
 +	if (sp->dma_regs)
-+		iounmap((void *) sp->dma_regs);
++		iounmap((void *)sp->dma_regs);
++	if (sp->phy_regs)
++		iounmap((void *)sp->phy_regs);
 +
 +	if (sp->rx_skb) {
 +		for (j = 0; j < AR2313_DESCR_ENTRIES; j++) {
@@ -537,47 +524,54 @@
 +
 +	add_timer(&sp->link_timer);
 +	return 0;
-+
 +}
 +
 +static void ar231x_link_timer_fn(unsigned long data)
 +{
-+	struct net_device *dev = (struct net_device *) data;
++	struct net_device *dev = (struct net_device *)data;
 +	struct ar231x_private *sp = netdev_priv(dev);
 +
-+	// see if the link status changed
-+	// This was needed to make sure we set the PHY to the
-+	// autonegotiated value of half or full duplex.
++	/**
++	 * See if the link status changed.
++	 * This was needed to make sure we set the PHY to the
++	 * autonegotiated value of half or full duplex.
++	 */
 +	ar231x_check_link(dev);
 +
-+	// Loop faster when we don't have link.
-+	// This was needed to speed up the AP bootstrap time.
-+	if (sp->link == 0) {
++	/**
++	 * Loop faster when we don't have link.
++	 * This was needed to speed up the AP bootstrap time.
++	 */
++	if (sp->link == 0)
 +		mod_timer(&sp->link_timer, jiffies + HZ / 2);
-+	} else {
++	else
 +		mod_timer(&sp->link_timer, jiffies + LINK_TIMER);
-+	}
 +}
 +
 +static void ar231x_check_link(struct net_device *dev)
 +{
 +	struct ar231x_private *sp = netdev_priv(dev);
-+	u16 phyData;
++	u16 phy_data;
 +
-+	phyData = ar231x_mdiobus_read(sp->mii_bus, sp->phy, MII_BMSR);
-+	if (sp->phyData != phyData) {
-+		if (phyData & BMSR_LSTATUS) {
-+			/* link is present, ready link partner ability to deterine
-+			   duplexity */
++	phy_data = ar231x_mdiobus_read(sp->mii_bus, sp->phy, MII_BMSR);
++	if (sp->phy_data != phy_data) {
++		if (phy_data & BMSR_LSTATUS) {
++			/**
++			 * Link is present, ready link partner ability to
++			 * deterine duplexity.
++			 */
 +			int duplex = 0;
 +			u16 reg;
 +
 +			sp->link = 1;
-+			reg = ar231x_mdiobus_read(sp->mii_bus, sp->phy, MII_BMCR);
++			reg = ar231x_mdiobus_read(sp->mii_bus, sp->phy,
++						  MII_BMCR);
 +			if (reg & BMCR_ANENABLE) {
 +				/* auto neg enabled */
-+				reg = ar231x_mdiobus_read(sp->mii_bus, sp->phy, MII_LPA);
-+				duplex = (reg & (LPA_100FULL | LPA_10FULL)) ? 1 : 0;
++				reg = ar231x_mdiobus_read(sp->mii_bus, sp->phy,
++							  MII_LPA);
++				duplex = reg & (LPA_100FULL | LPA_10FULL) ?
++					 1 : 0;
 +			} else {
 +				/* no auto neg, just read duplex config */
 +				duplex = (reg & BMCR_FULLDPLX) ? 1 : 0;
@@ -589,19 +583,19 @@
 +			if (duplex) {
 +				/* full duplex */
 +				sp->eth_regs->mac_control =
-+					((sp->eth_regs->
-+					  mac_control | MAC_CONTROL_F) & ~MAC_CONTROL_DRO);
++					(sp->eth_regs->mac_control |
++					 MAC_CONTROL_F) & ~MAC_CONTROL_DRO;
 +			} else {
 +				/* half duplex */
 +				sp->eth_regs->mac_control =
-+					((sp->eth_regs->
-+					  mac_control | MAC_CONTROL_DRO) & ~MAC_CONTROL_F);
++					(sp->eth_regs->mac_control |
++					 MAC_CONTROL_DRO) & ~MAC_CONTROL_F;
 +			}
 +		} else {
 +			/* no link */
 +			sp->link = 0;
 +		}
-+		sp->phyData = phyData;
++		sp->phy_data = phy_data;
 +	}
 +}
 +
@@ -611,13 +605,13 @@
 +	unsigned int ethsal, ethsah;
 +	unsigned int flags;
 +
-+	*sp->int_regs |= sp->cfg->reset_mac;
++	sp->cfg->reset_set(sp->cfg->reset_mac);
 +	mdelay(10);
-+	*sp->int_regs &= ~sp->cfg->reset_mac;
++	sp->cfg->reset_clear(sp->cfg->reset_mac);
 +	mdelay(10);
-+	*sp->int_regs |= sp->cfg->reset_phy;
++	sp->cfg->reset_set(sp->cfg->reset_phy);
 +	mdelay(10);
-+	*sp->int_regs &= ~sp->cfg->reset_phy;
++	sp->cfg->reset_clear(sp->cfg->reset_phy);
 +	mdelay(10);
 +
 +	sp->dma_regs->bus_mode = (DMA_BUS_MODE_SWR);
@@ -626,10 +620,9 @@
 +		((32 << DMA_BUS_MODE_PBL_SHIFT) | DMA_BUS_MODE_BLE);
 +
 +	/* enable interrupts */
-+	sp->dma_regs->intr_ena = (DMA_STATUS_AIS |
-+							  DMA_STATUS_NIS |
-+							  DMA_STATUS_RI |
-+							  DMA_STATUS_TI | DMA_STATUS_FBE);
++	sp->dma_regs->intr_ena = DMA_STATUS_AIS | DMA_STATUS_NIS |
++				 DMA_STATUS_RI | DMA_STATUS_TI |
++				 DMA_STATUS_FBE;
 +	sp->dma_regs->xmt_base = virt_to_phys(sp->tx_ring);
 +	sp->dma_regs->rcv_base = virt_to_phys(sp->rx_ring);
 +	sp->dma_regs->control =
@@ -650,20 +643,20 @@
 +	sp->eth_regs->mac_control = flags;
 +
 +	/* Set all Ethernet station address registers to their initial values */
-+	ethsah = ((((u_int) (dev->dev_addr[5]) << 8) & (u_int) 0x0000FF00) |
-+			  (((u_int) (dev->dev_addr[4]) << 0) & (u_int) 0x000000FF));
++	ethsah = (((u_int) (dev->dev_addr[5]) << 8) & (u_int) 0x0000FF00) |
++		 (((u_int) (dev->dev_addr[4]) << 0) & (u_int) 0x000000FF);
 +
-+	ethsal = ((((u_int) (dev->dev_addr[3]) << 24) & (u_int) 0xFF000000) |
-+			  (((u_int) (dev->dev_addr[2]) << 16) & (u_int) 0x00FF0000) |
-+			  (((u_int) (dev->dev_addr[1]) << 8) & (u_int) 0x0000FF00) |
-+			  (((u_int) (dev->dev_addr[0]) << 0) & (u_int) 0x000000FF));
++	ethsal = (((u_int) (dev->dev_addr[3]) << 24) & (u_int) 0xFF000000) |
++		 (((u_int) (dev->dev_addr[2]) << 16) & (u_int) 0x00FF0000) |
++		 (((u_int) (dev->dev_addr[1]) << 8) & (u_int) 0x0000FF00) |
++		 (((u_int) (dev->dev_addr[0]) << 0) & (u_int) 0x000000FF);
 +
 +	sp->eth_regs->mac_addr[0] = ethsah;
 +	sp->eth_regs->mac_addr[1] = ethsal;
 +
 +	mdelay(10);
 +
-+	return (0);
++	return 0;
 +}
 +
 +
@@ -672,26 +665,22 @@
 +	struct ar231x_private *sp = netdev_priv(dev);
 +	int ecode = 0;
 +
-+	/*
-+	 * Allocate descriptors
-+	 */
++	/* Allocate descriptors */
 +	if (ar231x_allocate_descriptors(dev)) {
 +		printk("%s: %s: ar231x_allocate_descriptors failed\n",
-+			   dev->name, __FUNCTION__);
++		       dev->name, __func__);
 +		ecode = -EAGAIN;
 +		goto init_error;
 +	}
 +
-+	/*
-+	 * Get the memory for the skb rings.
-+	 */
++	/* Get the memory for the skb rings */
 +	if (sp->rx_skb == NULL) {
 +		sp->rx_skb =
 +			kmalloc(sizeof(struct sk_buff *) * AR2313_DESCR_ENTRIES,
 +					GFP_KERNEL);
 +		if (!(sp->rx_skb)) {
 +			printk("%s: %s: rx_skb kmalloc failed\n",
-+				   dev->name, __FUNCTION__);
++			       dev->name, __func__);
 +			ecode = -EAGAIN;
 +			goto init_error;
 +		}
@@ -704,14 +693,14 @@
 +					GFP_KERNEL);
 +		if (!(sp->tx_skb)) {
 +			printk("%s: %s: tx_skb kmalloc failed\n",
-+				   dev->name, __FUNCTION__);
++			       dev->name, __func__);
 +			ecode = -EAGAIN;
 +			goto init_error;
 +		}
 +	}
 +	memset(sp->tx_skb, 0, sizeof(struct sk_buff *) * AR2313_DESCR_ENTRIES);
 +
-+	/*
++	/**
 +	 * Set tx_csm before we start receiving interrupts, otherwise
 +	 * the interrupt handler might think it is supposed to process
 +	 * tx ints before we are up and running, which may cause a null
@@ -722,32 +711,26 @@
 +	sp->tx_prd = 0;
 +	sp->tx_csm = 0;
 +
-+	/*
-+	 * Zero the stats before starting the interface
-+	 */
++	/* Zero the stats before starting the interface */
 +	memset(&dev->stats, 0, sizeof(dev->stats));
 +
-+	/*
++	/**
 +	 * We load the ring here as there seem to be no way to tell the
 +	 * firmware to wipe the ring without re-initializing it.
 +	 */
 +	ar231x_load_rx_ring(dev, RX_RING_SIZE);
 +
-+	/*
-+	 * Init hardware
-+	 */
++	/* Init hardware */
 +	ar231x_reset_reg(dev);
 +
-+	/*
-+	 * Get the IRQ
-+	 */
++	/* Get the IRQ */
 +	ecode =
 +		request_irq(dev->irq, &ar231x_interrupt,
 +					IRQF_DISABLED,
 +					dev->name, dev);
 +	if (ecode) {
 +		printk(KERN_WARNING "%s: %s: Requested IRQ %d is busy\n",
-+			   dev->name, __FUNCTION__, dev->irq);
++		       dev->name, __func__, dev->irq);
 +		goto init_error;
 +	}
 +
@@ -756,12 +739,12 @@
 +
 +	return 0;
 +
-+  init_error:
++init_error:
 +	ar231x_init_cleanup(dev);
 +	return ecode;
 +}
 +
-+/*
++/**
 + * Load the rx ring.
 + *
 + * Loading rings is safe without holding the spin lock since this is
@@ -770,7 +753,6 @@
 + */
 +static void ar231x_load_rx_ring(struct net_device *dev, int nr_bufs)
 +{
-+
 +	struct ar231x_private *sp = netdev_priv(dev);
 +	short i, idx;
 +
@@ -786,25 +768,21 @@
 +		skb = netdev_alloc_skb_ip_align(dev, AR2313_BUFSIZE);
 +		if (!skb) {
 +			printk("\n\n\n\n %s: No memory in system\n\n\n\n",
-+				   __FUNCTION__);
++			       __func__);
 +			break;
 +		}
 +
-+		/*
-+		 * Make sure IP header starts on a fresh cache line.
-+		 */
++		/* Make sure IP header starts on a fresh cache line */
 +		skb->dev = dev;
 +		sp->rx_skb[idx] = skb;
 +
-+		rd = (ar231x_descr_t *) & sp->rx_ring[idx];
++		rd = (ar231x_descr_t *)&sp->rx_ring[idx];
 +
 +		/* initialize dma descriptor */
 +		rd->devcs = ((AR2313_BUFSIZE << DMA_RX1_BSIZE_SHIFT) |
 +					 DMA_RX1_CHAINED);
 +		rd->addr = virt_to_phys(skb->data);
-+		rd->descr =
-+			virt_to_phys(&sp->
-+						 rx_ring[(idx + 1) & (AR2313_DESCR_ENTRIES - 1)]);
++		rd->descr = virt_to_phys(&sp->rx_ring[DSC_NEXT(idx)]);
 +		rd->status = DMA_RX_OWN;
 +
 +		idx = DSC_NEXT(idx);
@@ -830,12 +808,11 @@
 +
 +	idx = sp->cur_rx;
 +
-+	/* process at most the entire ring and then wait for another interrupt
-+	 */
++	/* process at most the entire ring and then wait for another int */
 +	while (1) {
-+
 +		rxdesc = &sp->rx_ring[idx];
 +		status = rxdesc->status;
++
 +		if (status & DMA_RX_OWN) {
 +			/* SiByte owns descriptor or descr not yet filled in */
 +			rval = 0;
@@ -865,13 +842,13 @@
 +
 +		} else {
 +			/* alloc new buffer. */
-+			skb_new = netdev_alloc_skb_ip_align(dev, AR2313_BUFSIZE);
++			skb_new = netdev_alloc_skb_ip_align(dev,
++							    AR2313_BUFSIZE);
 +			if (skb_new != NULL) {
-+
 +				skb = sp->rx_skb[idx];
 +				/* set skb */
-+				skb_put(skb,
-+						((status >> DMA_RX_LEN_SHIFT) & 0x3fff) - CRC_LEN);
++				skb_put(skb, ((status >> DMA_RX_LEN_SHIFT) &
++					0x3fff) - CRC_LEN);
 +
 +				dev->stats.rx_bytes += skb->len;
 +				skb->protocol = eth_type_trans(skb, dev);
@@ -914,15 +891,16 @@
 +
 +	while (idx != sp->tx_prd) {
 +		txdesc = &sp->tx_ring[idx];
++		status = txdesc->status;
 +
-+		if ((status = txdesc->status) & DMA_TX_OWN) {
++		if (status & DMA_TX_OWN) {
 +			/* ar231x dma still owns descr */
 +			break;
 +		}
 +		/* done with this descriptor */
 +		dma_unmap_single(NULL, txdesc->addr,
-+						 txdesc->devcs & DMA_TX1_BSIZE_MASK,
-+						 DMA_TO_DEVICE);
++				 txdesc->devcs & DMA_TX1_BSIZE_MASK,
++				 DMA_TO_DEVICE);
 +		txdesc->status = 0;
 +
 +		if (status & DMA_TX_ERROR) {
@@ -934,9 +912,8 @@
 +				dev->stats.tx_heartbeat_errors++;
 +			if (status & (DMA_TX_ERR_LOSS | DMA_TX_ERR_LINK))
 +				dev->stats.tx_carrier_errors++;
-+			if (status & (DMA_TX_ERR_LATE |
-+						  DMA_TX_ERR_COL |
-+						  DMA_TX_ERR_JABBER | DMA_TX_ERR_DEFER))
++			if (status & (DMA_TX_ERR_LATE | DMA_TX_ERR_COL |
++			    DMA_TX_ERR_JABBER | DMA_TX_ERR_DEFER))
 +				dev->stats.tx_aborted_errors++;
 +		} else {
 +			/* transmit OK */
@@ -958,12 +935,11 @@
 +
 +static void rx_tasklet_func(unsigned long data)
 +{
-+	struct net_device *dev = (struct net_device *) data;
++	struct net_device *dev = (struct net_device *)data;
 +	struct ar231x_private *sp = netdev_priv(dev);
 +
-+	if (sp->unloading) {
++	if (sp->unloading)
 +		return;
-+	}
 +
 +	if (ar231x_rx_int(dev)) {
 +		tasklet_hi_schedule(&sp->rx_tasklet);
@@ -986,21 +962,19 @@
 +
 +static irqreturn_t ar231x_interrupt(int irq, void *dev_id)
 +{
-+	struct net_device *dev = (struct net_device *) dev_id;
++	struct net_device *dev = (struct net_device *)dev_id;
 +	struct ar231x_private *sp = netdev_priv(dev);
 +	unsigned int status, enabled;
 +
 +	/* clear interrupt */
-+	/*
-+	 * Don't clear RI bit if currently disabled.
-+	 */
++	/* Don't clear RI bit if currently disabled */
 +	status = sp->dma_regs->status;
 +	enabled = sp->dma_regs->intr_ena;
 +	sp->dma_regs->status = status & enabled;
 +
 +	if (status & DMA_STATUS_NIS) {
 +		/* normal status */
-+		/*
++		/**
 +		 * Don't schedule rx processing if interrupt
 +		 * is already disabled.
 +		 */
@@ -1015,9 +989,9 @@
 +	}
 +
 +	/* abnormal status */
-+	if (status & (DMA_STATUS_FBE | DMA_STATUS_TPS)) {
++	if (status & (DMA_STATUS_FBE | DMA_STATUS_TPS))
 +		ar231x_restart(dev);
-+	}
++
 +	return IRQ_HANDLED;
 +}
 +
@@ -1028,13 +1002,13 @@
 +	unsigned int ethsal, ethsah;
 +
 +	/* reset the hardware, in case the MAC address changed */
-+	ethsah = ((((u_int) (dev->dev_addr[5]) << 8) & (u_int) 0x0000FF00) |
-+			  (((u_int) (dev->dev_addr[4]) << 0) & (u_int) 0x000000FF));
++	ethsah = (((u_int) (dev->dev_addr[5]) << 8) & (u_int) 0x0000FF00) |
++		 (((u_int) (dev->dev_addr[4]) << 0) & (u_int) 0x000000FF);
 +
-+	ethsal = ((((u_int) (dev->dev_addr[3]) << 24) & (u_int) 0xFF000000) |
-+			  (((u_int) (dev->dev_addr[2]) << 16) & (u_int) 0x00FF0000) |
-+			  (((u_int) (dev->dev_addr[1]) << 8) & (u_int) 0x0000FF00) |
-+			  (((u_int) (dev->dev_addr[0]) << 0) & (u_int) 0x000000FF));
++	ethsal = (((u_int) (dev->dev_addr[3]) << 24) & (u_int) 0xFF000000) |
++		 (((u_int) (dev->dev_addr[2]) << 16) & (u_int) 0x00FF0000) |
++		 (((u_int) (dev->dev_addr[1]) << 8) & (u_int) 0x0000FF00) |
++		 (((u_int) (dev->dev_addr[0]) << 0) & (u_int) 0x000000FF);
 +
 +	sp->eth_regs->mac_addr[0] = ethsah;
 +	sp->eth_regs->mac_addr[1] = ethsal;
@@ -1068,13 +1042,14 @@
 +
 +	/* kill the MAC */
 +	sp->eth_regs->mac_control &= ~(MAC_CONTROL_RE |	/* disable Receives */
-+								   MAC_CONTROL_TE);	/* disable Transmits */
++				       MAC_CONTROL_TE);	/* disable Transmits */
 +	/* stop dma */
 +	sp->dma_regs->control = 0;
 +	sp->dma_regs->bus_mode = DMA_BUS_MODE_SWR;
 +
 +	/* place phy and MAC in reset */
-+	*sp->int_regs |= (sp->cfg->reset_mac | sp->cfg->reset_phy);
++	sp->cfg->reset_set(sp->cfg->reset_mac);
++	sp->cfg->reset_set(sp->cfg->reset_phy);
 +
 +	/* free buffers on tx ring */
 +	for (j = 0; j < AR2313_DESCR_ENTRIES; j++) {
@@ -1092,25 +1067,23 @@
 +	}
 +}
 +
-+/*
++/**
 + * close should do nothing. Here's why. It's called when
 + * 'ifconfig bond0 down' is run. If it calls free_irq then
 + * the irq is gone forever ! When bond0 is made 'up' again,
 + * the ar231x_open () does not call request_irq (). Worse,
 + * the call to ar231x_halt() generates a WDOG reset due to
-+ * the write to 'sp->int_regs' and the box reboots.
++ * the write to reset register and the box reboots.
 + * Commenting this out is good since it allows the
 + * system to resume when bond0 is made up again.
 + */
 +static int ar231x_close(struct net_device *dev)
 +{
 +#if 0
-+	/*
-+	 * Disable interrupts
-+	 */
++	/* Disable interrupts */
 +	disable_irq(dev->irq);
 +
-+	/*
++	/**
 +	 * Without (or before) releasing irq and stopping hardware, this
 +	 * is an absolute non-sense, by the way. It will be reset instantly
 +	 * by the first irq.
@@ -1168,10 +1141,9 @@
 +	int ret;
 +
 +	switch (cmd) {
-+
 +	case SIOCETHTOOL:
 +		spin_lock_irq(&sp->lock);
-+		ret = phy_ethtool_ioctl(sp->phy_dev, (void *) ifr->ifr_data);
++		ret = phy_ethtool_ioctl(sp->phy_dev, (void *)ifr->ifr_data);
 +		spin_unlock_irq(&sp->lock);
 +		return ret;
 +
@@ -1227,22 +1199,23 @@
 +{
 +	struct net_device *const dev = bus->priv;
 +	struct ar231x_private *sp = netdev_priv(dev);
-+	volatile ETHERNET_STRUCT *ethernet = sp->phy_regs;
++	volatile MII *ethernet = sp->phy_regs;
 +
 +	ethernet->mii_addr = MII_ADDR(phy_addr, regnum);
-+	while (ethernet->mii_addr & MII_ADDR_BUSY);
-+	return (ethernet->mii_data >> MII_DATA_SHIFT);
++	while (ethernet->mii_addr & MII_ADDR_BUSY)
++		;
++	return ethernet->mii_data >> MII_DATA_SHIFT;
 +}
 +
 +static int
-+ar231x_mdiobus_write(struct mii_bus *bus, int phy_addr, int regnum,
-+             u16 value)
++ar231x_mdiobus_write(struct mii_bus *bus, int phy_addr, int regnum, u16 value)
 +{
 +	struct net_device *const dev = bus->priv;
 +	struct ar231x_private *sp = netdev_priv(dev);
-+	volatile ETHERNET_STRUCT *ethernet = sp->phy_regs;
++	volatile MII *ethernet = sp->phy_regs;
 +
-+	while (ethernet->mii_addr & MII_ADDR_BUSY);
++	while (ethernet->mii_addr & MII_ADDR_BUSY)
++		;
 +	ethernet->mii_data = value << MII_DATA_SHIFT;
 +	ethernet->mii_addr = MII_ADDR(phy_addr, regnum) | MII_ADDR_WRITE;
 +
@@ -1258,7 +1231,7 @@
 +	return 0;
 +}
 +
-+static int ar231x_mdiobus_probe (struct net_device *dev)
++static int ar231x_mdiobus_probe(struct net_device *dev)
 +{
 +	struct ar231x_private *const sp = netdev_priv(dev);
 +	struct phy_device *phydev = NULL;
@@ -1273,7 +1246,7 @@
 +		}
 +
 +	if (!phydev) {
-+		printk (KERN_ERR "ar231x: %s: no PHY found\n", dev->name);
++		printk(KERN_ERR "ar231x: %s: no PHY found\n", dev->name);
 +		return -1;
 +	}
 +
@@ -1281,8 +1254,8 @@
 +	BUG_ON(!phydev);
 +	BUG_ON(phydev->attached_dev);
 +
-+	phydev = phy_connect(dev, dev_name(&phydev->dev), &ar231x_adjust_link, 0,
-+		PHY_INTERFACE_MODE_MII);
++	phydev = phy_connect(dev, dev_name(&phydev->dev), &ar231x_adjust_link,
++			     PHY_INTERFACE_MODE_MII);
 +
 +	if (IS_ERR(phydev)) {
 +		printk(KERN_ERR "%s: Could not attach to PHY\n", dev->name);
@@ -1312,8 +1285,8 @@
 +}
 +
 --- /dev/null
-+++ b/drivers/net/ethernet/ar231x/ar231x.h
-@@ -0,0 +1,303 @@
++++ b/drivers/net/ethernet/atheros/ar231x/ar231x.h
+@@ -0,0 +1,295 @@
 +/*
 + * ar231x.h: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -1336,12 +1309,9 @@
 +#include <linux/interrupt.h>
 +#include <generated/autoconf.h>
 +#include <linux/bitops.h>
-+#include <asm/bootinfo.h>
 +#include <ar231x_platform.h>
 +
-+/*
-+ * probe link timer - 5 secs
-+ */
++/* probe link timer - 5 secs */
 +#define LINK_TIMER    (5*HZ)
 +
 +#define IS_DMA_TX_INT(X)   (((X) & (DMA_STATUS_TI)) != 0)
@@ -1350,9 +1320,7 @@
 +
 +#define AR2313_TX_TIMEOUT (HZ/4)
 +
-+/*
-+ * Rings
-+ */
++/* Rings */
 +#define DSC_RING_ENTRIES_SIZE	(AR2313_DESCR_ENTRIES * sizeof(struct desc))
 +#define DSC_NEXT(idx)	        ((idx + 1) & (AR2313_DESCR_ENTRIES - 1))
 +
@@ -1426,13 +1394,13 @@
 +#define MAC_CONTROL_HO		BIT(15)	/* Hash only filtering */
 +#define MAC_CONTROL_PB		BIT(16)	/* Pass Bad frames */
 +#define MAC_CONTROL_IF		BIT(17)	/* Inverse filtering */
-+#define MAC_CONTROL_PR		BIT(18)	/* promiscuous mode (valid frames only) */
++#define MAC_CONTROL_PR		BIT(18)	/* promis mode (valid frames only) */
 +#define MAC_CONTROL_PM		BIT(19)	/* pass multicast */
 +#define MAC_CONTROL_F		BIT(20)	/* full-duplex */
 +#define MAC_CONTROL_DRO		BIT(23)	/* Disable Receive Own */
 +#define MAC_CONTROL_HBD		BIT(28)	/* heart-beat disabled (MUST BE SET) */
 +#define MAC_CONTROL_BLE		BIT(30)	/* big endian mode */
-+#define MAC_CONTROL_RA		BIT(31)	/* receive all (valid and invalid frames) */
++#define MAC_CONTROL_RA		BIT(31)	/* rcv all (valid and invalid frames) */
 +
 +#define MII_ADDR_BUSY		BIT(0)
 +#define MII_ADDR_WRITE		BIT(1)
@@ -1470,29 +1438,37 @@
 +
 +
 +typedef struct {
-+	volatile unsigned int status;	// OWN, Device control and status.
-+	volatile unsigned int devcs;	// pkt Control bits + Length
-+	volatile unsigned int addr;	// Current Address.
-+	volatile unsigned int descr;	// Next descriptor in chain.
++	volatile unsigned int status;	/* OWN, Device control and status. */
++	volatile unsigned int devcs;	/* pkt Control bits + Length */
++	volatile unsigned int addr;	/* Current Address. */
++	volatile unsigned int descr;	/* Next descriptor in chain. */
 +} ar231x_descr_t;
 +
 +
 +
-+//
-+// New Combo structure for Both Eth0 AND eth1
-+//
++/**
++ * New Combo structure for Both Eth0 AND eth1
++ *
++ * Don't directly access MII related regs since phy chip could be actually
++ * connected to another ethernet block.
++ */
 +typedef struct {
 +	volatile unsigned int mac_control;	/* 0x00 */
 +	volatile unsigned int mac_addr[2];	/* 0x04 - 0x08 */
 +	volatile unsigned int mcast_table[2];	/* 0x0c - 0x10 */
-+	volatile unsigned int mii_addr;	/* 0x14 */
-+	volatile unsigned int mii_data;	/* 0x18 */
++	volatile unsigned int __mii_addr;	/* 0x14 */
++	volatile unsigned int __mii_data;	/* 0x18 */
 +	volatile unsigned int flow_control;	/* 0x1c */
 +	volatile unsigned int vlan_tag;	/* 0x20 */
 +	volatile unsigned int pad[7];	/* 0x24 - 0x3c */
 +	volatile unsigned int ucast_table[8];	/* 0x40-0x5c */
 +
 +} ETHERNET_STRUCT;
++
++typedef struct {
++	volatile unsigned int mii_addr;
++	volatile unsigned int mii_data;
++} MII;
 +
 +/********************************************************************
 + * Interrupt controller
@@ -1526,7 +1502,7 @@
 +	volatile unsigned int cur_rx_buf_addr;	/* 0x50 (CSR21) */
 +} DMA;
 +
-+/*
++/**
 + * Struct private for the Sibyte.
 + *
 + * Elements are grouped so variables used by the tx handling goes
@@ -1541,17 +1517,14 @@
 +	int version;
 +	u32 mb[2];
 +
-+	volatile ETHERNET_STRUCT *phy_regs;
++	volatile MII *phy_regs;
 +	volatile ETHERNET_STRUCT *eth_regs;
 +	volatile DMA *dma_regs;
-+	volatile u32 *int_regs;
 +	struct ar231x_eth *cfg;
 +
 +	spinlock_t lock;			/* Serialise access to device */
 +
-+	/*
-+	 * RX and TX descriptors, must be adjacent
-+	 */
++	/* RX and TX descriptors, must be adjacent */
 +	ar231x_descr_t *rx_ring;
 +	ar231x_descr_t *tx_ring;
 +
@@ -1559,21 +1532,15 @@
 +	struct sk_buff **rx_skb;
 +	struct sk_buff **tx_skb;
 +
-+	/*
-+	 * RX elements
-+	 */
++	/* RX elements */
 +	u32 rx_skbprd;
 +	u32 cur_rx;
 +
-+	/*
-+	 * TX elements
-+	 */
++	/* TX elements */
 +	u32 tx_prd;
 +	u32 tx_csm;
 +
-+	/*
-+	 * Misc elements
-+	 */
++	/* Misc elements */
 +	char name[48];
 +	struct {
 +		u32 address;
@@ -1583,10 +1550,10 @@
 +
 +
 +	struct timer_list link_timer;
-+	unsigned short phy;			/* merlot phy = 1, samsung phy = 0x1f */
++	unsigned short phy;		/* merlot phy = 1, samsung phy = 0x1f */
 +	unsigned short mac;
 +	unsigned short link;		/* 0 - link down, 1 - link up */
-+	u16 phyData;
++	u16 phy_data;
 +
 +	struct tasklet_struct rx_tasklet;
 +	int unloading;
@@ -1597,9 +1564,7 @@
 +};
 +
 +
-+/*
-+ * Prototypes
-+ */
++/* Prototypes */
 +static int ar231x_init(struct net_device *dev);
 +#ifdef TX_TIMEOUT
 +static void ar231x_tx_timeout(struct net_device *dev);

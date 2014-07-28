@@ -11,13 +11,16 @@ config interface wan
 config classify
 	option target       "Priority"
 	option ports        "22,53"
+	option comment      "ssh, dns"
 config classify
 	option target       "Normal"
 	option proto        "tcp"
 	option ports        "20,21,25,80,110,443,993,995"
+	option comment      "ftp, smtp, http(s), imap"
 config classify
 	option target       "Express"
 	option ports        "5190"
+	option comment      "AOL, iChat, ICQ"
 config default
 	option target       "Express"
 	option proto        "udp"
@@ -28,18 +31,6 @@ config reclassify
 config default
 	option target       "Bulk"
 	option portrange    "1024-65535"
-config reclassify
-	option target       "Priority"
-	option proto        "tcp"
-	option pktsize      "-128"
-	option mark         "!Bulk"
-	option tcpflags     "SYN"
-config reclassify
-	option target       "Priority"
-	option proto        "tcp"
-	option pktsize      "-128"
-	option mark	        "!Bulk"
-	option tcpflags     "ACK"
 
 
 # Don't change the stuff below unless you
@@ -52,7 +43,6 @@ config classgroup "Default"
 
 config class "Priority"
 	option packetsize  400
-	option maxsize     400
 	option avgrate     10
 	option priority    20
 config class "Priority_down"
@@ -62,7 +52,6 @@ config class "Priority_down"
 
 config class "Express"
 	option packetsize  1000
-	option maxsize     800
 	option avgrate     50
 	option priority    10
 

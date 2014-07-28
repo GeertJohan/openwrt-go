@@ -13,6 +13,8 @@ ADD_LOCAL_DOMAIN=1
 ADD_LOCAL_HOSTNAME=1
 
 CONFIGFILE="/var/etc/dnsmasq.conf"
+HOSTFILE="/tmp/hosts/dhcp"
+TRUSTANCHORSFILE="/usr/share/dnsmasq/trust-anchors.conf"
 
 xappend() {
 	local value="$1"
@@ -185,6 +187,13 @@ dnsmasq() {
 		config_list_foreach "$cfg" rebind_domain append_rebind_domain
 	}
 
+	config_get_bool dnssec "$cfg" dnssec 0
+	[ "$dnssec" -gt 0 ] && {
+		xappend "--conf-file=$TRUSTANCHORSFILE"
+		xappend "--dnssec"
+		append_bool "$cfg" dnsseccheckunsigned "--dnssec-check-unsigned"
+	}
+
 	dhcp_option_add "$cfg" "" 0
 
 	xappend "--dhcp-broadcast=tag:needs-broadcast"
@@ -300,6 +309,11 @@ dhcp_host_add() {
 	[ "$broadcast" = "0" ] && broadcast=
 
 	xappend "--dhcp-host=$macs${networkid:+,net:$networkid}${broadcast:+,set:needs-broadcast}${tag:+,set:$tag}${ip:+,$ip}${name:+,$name}"
+
+	config_get_bool dns "$cfg" dns 0
+	[ "$dns" = "1" ] && {
+		echo "$ip $name${DOMAIN:+.$DOMAIN}" >> $HOSTFILE
+	}
 }
 
 dhcp_tag_add() {
@@ -522,12 +536,14 @@ start_service() {
 	procd_open_instance
 	procd_set_param command $PROG -C $CONFIGFILE -k
 	procd_set_param file $CONFIGFILE
+	procd_set_param respawn
 	procd_close_instance
 
 	# before we can call xappend
 	mkdir -p $(dirname $CONFIGFILE)
 
 	echo "# auto-generated config file from /etc/config/dhcp" > $CONFIGFILE
+	echo "# auto-generated config file from /etc/config/dhcp" > $HOSTFILE
 
 	# if we did this last, we could override auto-generated config
 	[ -f /etc/dnsmasq.conf ] && {

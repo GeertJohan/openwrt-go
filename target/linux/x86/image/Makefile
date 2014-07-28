@@ -53,15 +53,15 @@ ifneq ($(CONFIG_GRUB_IMAGES),)
   endef
 
   define Image/cmdline/jffs2-64k
-    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=jffs2 rootwait
+    block2mtd.block2mtd=$(ROOTPART),65536,rootfs,5 root=/dev/mtdblock0 rootfstype=jffs2 rootwait
   endef
 
   define Image/cmdline/jffs2-128k
-    block2mtd.block2mtd=$(ROOTPART),131072,rootfs root=/dev/mtdblock0 rootfstype=jffs2 rootwait
+    block2mtd.block2mtd=$(ROOTPART),131072,rootfs,5 root=/dev/mtdblock0 rootfstype=jffs2 rootwait
   endef
 
   define Image/cmdline/squashfs
-    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=squashfs rootwait
+    block2mtd.block2mtd=$(ROOTPART),65536,rootfs,5 root=/dev/mtdblock0 rootfstype=squashfs rootwait
   endef
 
   define Image/Build/grub2
@@ -160,27 +160,21 @@ endef
 
 ifneq ($(CONFIG_VDI_IMAGES),)
   define Image/Build/vdi
-    # left here because the image builder doesnt need these
-    ifeq ($(1),ext4)
-		rm $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vdi || true
-		qemu-img convert -f raw -O vdi \
-			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
-			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vdi
-		# XXX: VBoxManage insists on setting perms to 0600
-		chmod 0644 $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vdi
-    endif
+	rm $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vdi || true
+	qemu-img convert -f raw -O vdi \
+		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
+		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vdi
+	# XXX: VBoxManage insists on setting perms to 0600
+	chmod 0644 $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vdi
   endef
 endif
 
 ifneq ($(CONFIG_VMDK_IMAGES),)
   define Image/Build/vmdk
-    # left here because the image builder doesnt need these
-    ifeq ($(1),ext4)
-		rm $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vmdk || true
-		qemu-img convert -f raw -O vmdk \
-			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
-			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vmdk
-    endif
+	rm $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vmdk || true
+	qemu-img convert -f raw -O vmdk \
+		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
+		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vmdk
   endef
 endif
 

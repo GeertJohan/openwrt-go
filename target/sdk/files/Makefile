@@ -19,6 +19,11 @@ include $(TOPDIR)/include/host.mk
 ifneq ($(OPENWRT_BUILD),1)
   override OPENWRT_BUILD=1
   export OPENWRT_BUILD
+
+  empty:=
+  space:= $(empty) $(empty)
+  _SINGLE=export MAKEFLAGS=$(space);
+
   include $(TOPDIR)/include/debug.mk
   include $(TOPDIR)/include/depends.mk
   include $(TOPDIR)/include/toplevel.mk
@@ -44,9 +49,6 @@ dirclean: clean
 prereq: $(package/stamp-prereq) ;
 
 world: prepare $(package/stamp-compile) FORCE
-	@for configfile in `find package -maxdepth 2 -name Config.in` ; do \
-		$(MAKE) compile -C `dirname $$configfile`; \
-	done
 	@$(MAKE) package/index
 
 .PHONY: clean dirclean prereq prepare world

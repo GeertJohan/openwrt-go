@@ -35,6 +35,12 @@ case $board in
 		ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "all0256n:green:rssihigh" "wlan0" "70" "100" "-69" "8"
 		set_wifi_led "rt2800pci-phy0::radio"
 		;;
+	awapn2403)
+		set_wifi_led "rt2800soc-phy0::radio"
+		;;
+	ar725w)
+		set_wifi_led "rt2800soc-phy0::radio"
+		;;
 	asl26555)
 		ucidef_set_led_default "power" "POWER" "asl26555:green:power" "1"
 		ucidef_set_led_netdev "eth" "ETH" "asl26555:green:eth" "eth0"
@@ -56,6 +62,10 @@ case $board in
 		;;
 	br6524n)
 		set_wifi_led "edimax:blue:wlan"
+		;;
+	cy-swr1100)
+		ucidef_set_led_default "wps" "WPS" "samsung:blue:wps" "0"
+		set_usb_led "samsung:blue:usb"
 		;;
 	d105)
 		ucidef_set_led_default "power" "POWER" "d105:red:power" "1"
@@ -103,6 +113,9 @@ case $board in
 	hw550-3g)
 		set_usb_led "hw550-3g:green:usb"
 		;;
+	mlw221)
+		set_wifi_led "kingston:blue:wifi"
+		;;
 	mofi3500-3gn)
 		set_usb_led "mofi3500-3gn:green:usb"
 		;;
@@ -115,6 +128,9 @@ case $board in
 	mzk-w300nh2)
 		set_wifi_led "mzkw300nh2:amber:wlan"
 		;;
+	na930)
+		set_usb_led "na930:blue:status"
+		;;
 	nw718)
 		set_usb_led "nw718:amber:usb"
 		;;
@@ -122,6 +138,10 @@ case $board in
 		ucidef_set_led_default "power" "POWER" "emb:orange:power" "1"
 		ucidef_set_led_netdev "eth" "ETH" "emb:green:eth" "eth0"
 		set_wifi_led "emb:green:wifi"
+		;;
+	px4885)
+		set_wifi_led "7links:orange:wifi"
+		set_usb_led "7links:blue:storage"
 		;;
 	sl-r7205)
 		set_wifi_led "rt2800pci-phy0::radio"
@@ -159,9 +179,20 @@ case $board in
 		set_wifi_led "asus:blue:wifi"
 		;;
 	whr-300hp2 |\
-	whr-600d)
+	whr-600d |\
+	whr-1166d)
 		ucidef_set_led_default "power" "power" "buffalo:green:power" "1"
 		ucidef_set_led_default "router" "router" "buffalo:green:router" "1"
+		;;
+	zbt-wa05)
+		ucidef_set_led_default "power" "power" "zbtlink:blue:power" "1"
+		set_wifi_led "zbtlink:blue:air"
+		set_usb_led "zbtlink:blue:usb"
+		;;
+	wr8305rt)
+		ucidef_set_led_default "power" "power" "wr8305rt:sys" "1"
+		set_usb_led "wr8305rt:usb"
+		set_wifi_led "wr8305rt:wifi"
 		;;
 esac
 

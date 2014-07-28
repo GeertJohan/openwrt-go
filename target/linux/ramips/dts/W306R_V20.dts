@@ -49,11 +49,15 @@
 	};
 
 	ethernet@10100000 {
-		mtd-mac-address = <&factory 0x4>;
+		mtd-mac-address = <&factory 0x28>;
 	};
 
 	esw@10110000 {
 		ralink,portmap = <0x3e>;
+	};
+
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&factory 0>;
 	};
 
 	gpio-leds {

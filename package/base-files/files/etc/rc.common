@@ -92,10 +92,6 @@ service_running() {
 	return 0
 }
 
-stop_service() {
-	return 0
-}
-
 ${INIT_TRACE:+set -x}
 
 . "$initscript"
@@ -113,18 +109,21 @@ ${INIT_TRACE:+set -x}
 
 	start() {
 		rc_procd start_service "$@"
+		if eval "type service_started" 2>/dev/null >/dev/null; then
+			service_started
+		fi
 	}
 
 	stop() {
-		procd_kill "$(basename ${basescript:-$initscript})" "$1"
 		stop_service "$@"
+		procd_kill "$(basename ${basescript:-$initscript})" "$1"
 	}
 
 	reload() {
 		if eval "type reload_service" 2>/dev/null >/dev/null; then
 			reload_service "$@"
 		else
-			restart
+			start
 		fi
 	}
 

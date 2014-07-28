@@ -1,7 +1,7 @@
 choice
 	prompt "eglibc version"
 	depends on TOOLCHAINOPTS && USE_EGLIBC
-	default EGLIBC_USE_VERSION_2_15
+	default EGLIBC_USE_VERSION_2_19
 	help
 	  Select the version of eglibc you wish to use.
 
@@ -9,23 +9,11 @@ choice
 		bool "eglibc 2.15"
 		select EGLIBC_VERSION_2_15
 
-	config EGLIBC_USE_VERSION_2_16
-		bool "eglibc 2.16"
-		select EGLIBC_VERSION_2_16
-
-	config EGLIBC_USE_VERSION_2_17
-		bool "eglibc 2.17"
-		select EGLIBC_VERSION_2_17
+	config EGLIBC_USE_VERSION_2_19
+		bool "eglibc 2.19"
+		select EGLIBC_VERSION_2_19
 
 endchoice
-
-config EGLIBC_REVISION
-	string
-	depends on TOOLCHAINOPTS && USE_EGLIBC
-	default "18909" if EGLIBC_VERSION_2_15
-	default "21110" if EGLIBC_VERSION_2_16
-	default "22243" if EGLIBC_VERSION_2_17
-	default ""
 
 menu "eglibc configuration"
 	depends on TOOLCHAINOPTS && USE_EGLIBC

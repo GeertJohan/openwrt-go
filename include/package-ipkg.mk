@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006,2007 OpenWrt.org
+# Copyright (C) 2006-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -80,9 +80,12 @@ ifeq ($(DUMP),)
 
     ifeq ($(BUILD_VARIANT),$$(if $$(VARIANT),$$(VARIANT),$(BUILD_VARIANT)))
     ifdef Package/$(1)/install
-      ifneq ($(CONFIG_PACKAGE_$(1))$(SDK)$(DEVELOPER),)
+      ifneq ($(CONFIG_PACKAGE_$(1))$(DEVELOPER),)
         IPKGS += $(1)
         compile: $$(IPKG_$(1)) $(PKG_INFO_DIR)/$(1).provides $(STAGING_DIR_ROOT)/stamp/.$(1)_installed
+        ifneq ($(ABI_VERSION),)
+        compile: $(PKG_INFO_DIR)/$(1).version
+        endif
 
         ifeq ($(CONFIG_PACKAGE_$(1)),y)
           .PHONY: $(PKG_INSTALL_STAMP).$(1)
@@ -123,6 +126,10 @@ ifeq ($(DUMP),)
 	$(call locked,$(CP) $(STAGING_DIR_ROOT)/tmp-$(1)/. $(STAGING_DIR_ROOT)/,root-copy)
 	rm -rf $(STAGING_DIR_ROOT)/tmp-$(1)
 	touch $$@
+
+    $(PKG_INFO_DIR)/$(1).version: $$(IPKG_$(1))
+	echo '$(ABI_VERSION)' | cmp -s - $$@ || \
+		echo '$(ABI_VERSION)' > $$@
 
     $(PKG_INFO_DIR)/$(1).provides: $$(IPKG_$(1))
     $$(IPKG_$(1)): $(STAMP_BUILT) $(INCLUDE_DIR)/package-ipkg.mk

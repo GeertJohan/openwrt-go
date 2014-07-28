@@ -172,6 +172,7 @@ ucidef_set_interface_lan() {
 	uci batch <<EOF
 set network.lan='interface'
 set network.lan.ifname='$ifname'
+set network.lan.force_link=1
 set network.lan.type='bridge'
 set network.lan.proto='static'
 set network.lan.ipaddr='192.168.1.1'
@@ -231,6 +232,16 @@ add network switch_vlan
 set network.@switch_vlan[-1].device='$device'
 set network.@switch_vlan[-1].vlan='$vlan'
 set network.@switch_vlan[-1].ports='$ports'
+EOF
+}
+
+ucidef_add_switch_port() {
+	local device=$1
+	local port=$2
+	uci batch <<EOF
+add network switch_port
+set network.@switch_port[-1].device='$device'
+set network.@switch_port[-1].port='$port'
 EOF
 }
 

@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=authsae
-PKG_VERSION:=2013-07-24
+PKG_VERSION:=2014-04-19
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=git://github.com/cozybit/authsae.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=f5693a3ee8dcc4e11d25acc4e75f5d154c0b302b
+PKG_SOURCE_VERSION:=295164a83717ce59ca280468fc2f7edcea6b3cbf
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 
 PKG_BUILD_PARALLEL:=1
@@ -31,7 +31,7 @@ define Package/authsae
   SECTION:=net
   CATEGORY:=Network
   TITLE:=80211s mesh security
-  DEPENDS=+libopenssl +libconfig +libnl-tiny +@OPENSSL_WITH_EC
+  DEPENDS:=+libopenssl +libconfig +libnl-tiny +@OPENSSL_WITH_EC
 endef
 
 TARGET_CFLAGS += -D_GNU_SOURCE

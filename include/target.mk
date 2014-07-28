@@ -12,7 +12,7 @@ __target_inc=1
 DEVICE_TYPE?=router
 
 # Default packages - the really basic set
-DEFAULT_PACKAGES:=base-files libc libgcc busybox dropbear mtd uci opkg netifd
+DEFAULT_PACKAGES:=base-files libc libgcc busybox dropbear mtd uci opkg netifd fstools
 # For router targets
 DEFAULT_PACKAGES.router:=dnsmasq iptables ip6tables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall odhcpd odhcp6c
 DEFAULT_PACKAGES.bootloader:=
@@ -51,6 +51,9 @@ endif
 # Add device specific packages (here below to allow device type set from subtarget)
 DEFAULT_PACKAGES += $(DEFAULT_PACKAGES.$(DEVICE_TYPE))
 
+filter_packages = $(filter-out -% $(patsubst -%,%,$(filter -%,$(1))),$(1))
+extra_packages = $(if $(filter wpad-mini wpad nas,$(1)),iwinfo)
+
 define Profile/Default
   NAME:=
   PACKAGES:=
@@ -65,7 +68,7 @@ define Profile
   DUMPINFO += \
 	echo "Target-Profile: $(1)"; \
 	echo "Target-Profile-Name: $(NAME)"; \
-	echo "Target-Profile-Packages: $(PACKAGES)"; \
+	echo "Target-Profile-Packages: $(PACKAGES) $(call extra_packages,$(DEFAULT_PACKAGES) $(PACKAGES))"; \
 	if [ -f ./config/profile-$(1) ]; then \
 		echo "Target-Profile-Kconfig: yes"; \
 	fi; \
@@ -211,6 +214,8 @@ ifeq ($(DUMP),1)
     CPU_CFLAGS_mips64 = -mips64 -mtune=mips64 -mabi=64
     CPU_CFLAGS_24kec = -mips32r2 -mtune=24kec
     CPU_CFLAGS_34kc = -mips32r2 -mtune=34kc
+    CPU_CFLAGS_74kc = -mips32r2 -mtune=74kc
+    CPU_CFLAGS_octeon = -march=octeon -mabi=64
     CPU_CFLAGS_dsp = -mdsp
     CPU_CFLAGS_dsp2 = -mdspr2
   endif
@@ -228,10 +233,12 @@ ifeq ($(DUMP),1)
     CPU_CFLAGS_cortex-a7 = -march=armv7-a -mtune=cortex-a7
     CPU_CFLAGS_cortex-a8 = -march=armv7-a -mtune=cortex-a8
     CPU_CFLAGS_cortex-a9 = -march=armv7-a -mtune=cortex-a9
+    CPU_CFLAGS_cortex-a15 = -march=armv7-a -mtune=cortex-a15
     CPU_CFLAGS_fa526 = -march=armv4 -mtune=fa526
     CPU_CFLAGS_mpcore = -march=armv6k -mtune=mpcore
     CPU_CFLAGS_xscale = -march=armv5te -mtune=xscale
-    ifneq ($(CONFIG_SOFT_FLOAT),)
+    ifeq ($(CONFIG_SOFT_FLOAT),)
+      CPU_CFLAGS_neon = -mfpu=neon
       CPU_CFLAGS_vfp = -mfpu=vfp
       CPU_CFLAGS_vfpv3 = -mfpu=vfpv3-d16
     endif
@@ -269,7 +276,7 @@ define BuildTargets/DumpCurrent
 	 echo 'Target-Description:'; \
 	 $(SH_FUNC) getvar $(call shvar,Target/Description); \
 	 echo '@@'; \
-	 echo 'Default-Packages: $(DEFAULT_PACKAGES)'; \
+	 echo 'Default-Packages: $(DEFAULT_PACKAGES) $(call extra_packages,$(DEFAULT_PACKAGES))'; \
 	 $(DUMPINFO)
 	$(if $(SUBTARGET),,@$(foreach SUBTARGET,$(SUBTARGETS),$(SUBMAKE) -s DUMP=1 SUBTARGET=$(SUBTARGET); ))
 endef

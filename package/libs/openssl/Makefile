@@ -8,8 +8,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
-PKG_VERSION:=1.0.1e
-PKG_RELEASE:=2
+PKG_VERSION:=1.0.1h
+PKG_RELEASE:=1
 PKG_USE_MIPS16:=0
 
 PKG_BUILD_PARALLEL:=1
@@ -18,13 +18,13 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.openssl.org/source/ \
 	ftp://ftp.funet.fi/pub/crypt/mirrors/ftp.openssl.org/source \
 	ftp://ftp.sunet.se/pub/security/tools/net/openssl/source/
-PKG_MD5SUM:=66bf6f10f060d561929de96f9dfe5b8c
+PKG_MD5SUM:=8d6d684a9430d5cc98a62a5d8fbda8cf
 
 PKG_LICENSE:=SSLEAY OPENSSL
 PKG_LICENSE_FILES:=LICENSE
 PKG_BUILD_DEPENDS:=ocf-crypto-headers
 PKG_CONFIG_DEPENDS:=CONFIG_OPENSSL_ENGINE_CRYPTO CONFIG_OPENSSL_ENGINE_DIGEST \
-	OPENSSL_WITH_EC OPENSSL_WITH_EC2M
+	CONFIG_OPENSSL_WITH_EC CONFIG_OPENSSL_WITH_EC2M
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -100,6 +100,7 @@ endif
 
 ifeq ($(CONFIG_x86_64),y)
   OPENSSL_TARGET:=linux-x86_64
+  OPENSSL_MAKEFLAGS += LIBDIR=lib
 else
   OPENSSL_OPTIONS+=no-sse2
   ifeq ($(CONFIG_mips)$(CONFIG_mipsel),y)
@@ -110,7 +111,13 @@ else
   endif
 endif
 
+STAMP_CONFIGURED := $(STAMP_CONFIGURED)_$(subst $(space),_,$(OPENSSL_OPTIONS))
+
 define Build/Configure
+	[ -f $(STAMP_CONFIGURED) ] || { \
+		rm -f $(PKG_BUILD_DIR)/*.so.* $(PKG_BUILD_DIR)/*.a; \
+		find $(PKG_BUILD_DIR) -name \*.o | xargs rm -f; \
+	}
 	(cd $(PKG_BUILD_DIR); \
 		./Configure $(OPENSSL_TARGET) \
 			--prefix=/usr \
@@ -121,11 +128,6 @@ define Build/Configure
 			$(OPENSSL_NO_CIPHERS) \
 			$(OPENSSL_OPTIONS) \
 	)
-endef
-
-TARGET_CFLAGS += $(FPIC)
-
-define Build/Compile
 	# XXX: OpenSSL "make depend" will look for installed headers before its own,
 	# so remove installed stuff first
 	-$(SUBMAKE) -j1 clean-staging
@@ -134,6 +136,11 @@ define Build/Compile
 		OPENWRT_OPTIMIZATION_FLAGS="$(TARGET_CFLAGS)" \
 		$(OPENSSL_MAKEFLAGS) \
 		depend
+endef
+
+TARGET_CFLAGS += $(FPIC)
+
+define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
 		ASFLAGS="$(TARGET_ASFLAGS) -c" \

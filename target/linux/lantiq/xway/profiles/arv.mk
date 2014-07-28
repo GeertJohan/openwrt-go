@@ -74,7 +74,7 @@ define Profile/ARV7510PW22
 	ltq-adsl-app ppp-mod-pppoa \
 	kmod-ltq-tapi kmod-ltq-vmmc \
 	kmod-rt2800-pci wpad-mini \
-	kmod-uhci kmod-usb2 kmod-usb2-pci \
+	kmod-usb-uhci kmod-usb2 kmod-usb2-pci \
 	swconfig
 endef
 
@@ -91,6 +91,18 @@ define Profile/ARV7518PW
 endef
 
 $(eval $(call Profile,ARV7518PW))
+
+define Profile/ARV7519PW
+  NAME:=Astoria - ARV7519PW
+  PACKAGES:=kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
+	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
+	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
+	ltq-adsl-app ppp-mod-pppoa \
+  	kmod-rt2800-pci wpad-mini \
+	swconfig
+endef
+
+$(eval $(call Profile,ARV7519PW))
 
 define Profile/ARV4520PW
   NAME:=Easybox 800, WAV-281 - ARV4520PW

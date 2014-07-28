@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=samba
-PKG_VERSION:=3.6.11
-PKG_RELEASE:=2
+PKG_VERSION:=3.6.24
+PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=http://ftp.samba.org/pub/samba \
-	http://ftp.samba.org/pub/samba/old-versions
+	http://ftp.samba.org/pub/samba/stable
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_MD5SUM:=9039e0ab3e4fc632ff0a1a8f2433edb4
+PKG_MD5SUM:=d98425c0c2b73e08f048d31ffc727fb0
 
 PKG_LICENSE:=GPLv3
 PKG_LICENSE_FILES:=COPYING
@@ -65,6 +65,8 @@ TARGET_CFLAGS += -DMAX_DEBUG_LEVEL=$(CONFIG_PACKAGE_SAMBA_MAX_DEBUG_LEVEL) -D__l
 TARGET_LDFLAGS += -Wl,--gc-sections
 
 CONFIGURE_VARS += \
+	ac_cv_lib_attr_getxattr=no \
+	ac_cv_search_getxattr=no \
 	ac_cv_file__proc_sys_kernel_core_pattern=yes \
 	libreplace_cv_HAVE_C99_VSNPRINTF=yes \
 	libreplace_cv_HAVE_GETADDRINFO=yes \
@@ -103,6 +105,7 @@ CONFIGURE_ARGS += \
 	--with-piddir=/var/run \
 	--with-privatedir=/etc/samba \
 	--with-sendfile-support \
+	--without-acl-support \
 	--without-cluster-support \
 	--without-ads \
 	--without-krb5 \
@@ -114,6 +117,7 @@ CONFIGURE_ARGS += \
 	--without-libnetapi \
 	--without-libsmbclient \
 	--without-libsmbsharemodes \
+	--without-libtevent \
 	--without-libaddns \
 	--with-shared-modules=pdb_tdbsam,pdb_wbc_sam,idmap_nss,nss_info_template,auth_winbind,auth_wbc,auth_domain
 

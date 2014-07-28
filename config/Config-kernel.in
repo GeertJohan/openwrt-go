@@ -1,8 +1,21 @@
-# Copyright (C) 2006-2013 OpenWrt.org
+# Copyright (C) 2006-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+
+config KERNEL_PRINTK
+	bool "Enable support for printk"
+	default y
+
+config KERNEL_CRASHLOG
+	bool "Crash logging"
+	depends on !(arm || powerpc || sparc || TARGET_uml)
+	default y
+
+config KERNEL_SWAP
+	bool "Support for paging of anonymous memory (swap)"
+	default y
 
 config KERNEL_DEBUG_FS
 	bool "Compile the kernel with Debug FileSystem enabled"
@@ -121,6 +134,20 @@ config KERNEL_PRINTK_TIME
 	bool "Enable printk timestamps"
 	default y
 
+config KERNEL_SLUB_DEBUG
+	bool
+
+config KERNEL_SLUB_DEBUG_ON
+	bool
+
+config KERNEL_SLABINFO
+	select KERNEL_SLUB_DEBUG
+	select KERNEL_SLUB_DEBUG_ON
+	bool "Enable /proc slab debug info"
+
+config KERNEL_PROC_PAGE_MONITOR
+	bool "Enable /proc page monitoring"
+
 config KERNEL_RELAY
 	bool
 
@@ -130,6 +157,10 @@ config KERNEL_KEXEC
 config USE_RFKILL
 	bool "Enable rfkill support"
 	default RFKILL_SUPPORT
+
+config USE_SPARSE
+	bool "Enable sparse check during kernel build"
+	default n
 
 #
 # CGROUP support symbols
@@ -268,12 +299,9 @@ if KERNEL_CGROUPS
 		  the kmem extension can use it to guarantee that no group of processes
 		  will ever exhaust kernel resources alone.
 
-	config KERNEL_PERF_EVENTS
-		bool
-		default y if KERNEL_CGROUP_PERF
-
 	config KERNEL_CGROUP_PERF
 		bool "Enable perf_event per-cpu per-container group (cgroup) monitoring"
+		select KERNEL_PERF_EVENTS
 		default n
 		help
 		  This option extends the per-cpu mode to restrict monitoring to
@@ -423,7 +451,7 @@ if KERNEL_LXC_MISC
 
 	config KERNEL_POSIX_MQUEUE
 		bool "POSIX Message Queues"
-		default n
+		default y
 		help
 		  POSIX variant of message queues is a part of IPC. In POSIX message
 		  queues every message has a priority which decides about succession

@@ -23,7 +23,7 @@
  
 --- /dev/null
 +++ b/drivers/mtd/devices/ar2315.c
-@@ -0,0 +1,515 @@
+@@ -0,0 +1,536 @@
 +
 +/*
 + * MTD driver for the SPI Flash Memory support on Atheros AR2315
@@ -52,12 +52,9 @@
 +#include <linux/sched.h>
 +#include <linux/root_dev.h>
 +#include <linux/delay.h>
-+#include <asm/delay.h>
-+#include <asm/io.h>
++#include <linux/io.h>
 +
-+#include <ar2315_spiflash.h>
-+#include <ar231x_platform.h>
-+#include <ar231x.h>
++#include "ar2315_spiflash.h"
 +
 +
 +#define SPIFLASH "spiflash: "
@@ -90,13 +87,18 @@
 +	u32 sector_size;
 +};
 +
-+const struct flashconfig flashconfig_tbl[] = {
++static const struct flashconfig flashconfig_tbl[] = {
 +	[FLASH_NONE] = { 0, 0, 0},
-+	[FLASH_1MB]  = { STM_1MB_BYTE_COUNT, STM_1MB_SECTOR_COUNT, STM_1MB_SECTOR_SIZE},
-+	[FLASH_2MB]  = { STM_2MB_BYTE_COUNT, STM_2MB_SECTOR_COUNT, STM_2MB_SECTOR_SIZE},
-+	[FLASH_4MB]  = { STM_4MB_BYTE_COUNT, STM_4MB_SECTOR_COUNT, STM_4MB_SECTOR_SIZE},
-+	[FLASH_8MB]  = { STM_8MB_BYTE_COUNT, STM_8MB_SECTOR_COUNT, STM_8MB_SECTOR_SIZE},
-+	[FLASH_16MB] = { STM_16MB_BYTE_COUNT, STM_16MB_SECTOR_COUNT, STM_16MB_SECTOR_SIZE}
++	[FLASH_1MB]  = { STM_1MB_BYTE_COUNT, STM_1MB_SECTOR_COUNT,
++			 STM_1MB_SECTOR_SIZE},
++	[FLASH_2MB]  = { STM_2MB_BYTE_COUNT, STM_2MB_SECTOR_COUNT,
++			 STM_2MB_SECTOR_SIZE},
++	[FLASH_4MB]  = { STM_4MB_BYTE_COUNT, STM_4MB_SECTOR_COUNT,
++			 STM_4MB_SECTOR_SIZE},
++	[FLASH_8MB]  = { STM_8MB_BYTE_COUNT, STM_8MB_SECTOR_COUNT,
++			 STM_8MB_SECTOR_SIZE},
++	[FLASH_16MB] = { STM_16MB_BYTE_COUNT, STM_16MB_SECTOR_COUNT,
++			 STM_16MB_SECTOR_SIZE}
 +};
 +
 +/* Mapping of generic opcodes to STM serial flash opcodes */
@@ -115,11 +117,12 @@
 +};
 +
 +struct opcodes {
-+    __u16 code;
-+    __s8 tx_cnt;
-+    __s8 rx_cnt;
++	__u16 code;
++	__s8 tx_cnt;
++	__s8 rx_cnt;
 +};
-+const struct opcodes stm_opcodes[] = {
++
++static const struct opcodes stm_opcodes[] = {
 +	[SPI_WRITE_ENABLE] = {STM_OP_WR_ENABLE, 1, 0},
 +	[SPI_WRITE_DISABLE] = {STM_OP_WR_DISABLE, 1, 0},
 +	[SPI_RD_STATUS] = {STM_OP_RD_STATUS, 1, 1},
@@ -136,8 +139,8 @@
 +/* Driver private data structure */
 +struct spiflash_priv {
 +	struct mtd_info mtd;
-+	void *readaddr; /* memory mapped data for read  */
-+	void *mmraddr;  /* memory mapped register space */
++	void __iomem *readaddr; /* memory mapped data for read  */
++	void __iomem *mmraddr;  /* memory mapped register space */
 +	wait_queue_head_t wq;
 +	spinlock_t lock;
 +	int state;
@@ -152,18 +155,18 @@
 +	FL_WRITING
 +};
 +
-+/***************************************************************************************************/
++/*****************************************************************************/
 +
 +static u32
 +spiflash_read_reg(struct spiflash_priv *priv, int reg)
 +{
-+	return ar231x_read_reg((u32) priv->mmraddr + reg);
++	return ioread32(priv->mmraddr + reg);
 +}
 +
 +static void
 +spiflash_write_reg(struct spiflash_priv *priv, int reg, u32 data)
 +{
-+	ar231x_write_reg((u32) priv->mmraddr + reg, data);
++	iowrite32(data, priv->mmraddr + reg);
 +}
 +
 +static u32
@@ -177,7 +180,7 @@
 +}
 +
 +static u32
-+spiflash_sendcmd (struct spiflash_priv *priv, int opcode, u32 addr)
++spiflash_sendcmd(struct spiflash_priv *priv, int opcode, u32 addr)
 +{
 +	const struct opcodes *op;
 +	u32 reg, mask;
@@ -224,7 +227,7 @@
 + * and flashconfig_tbl array index for success.
 + */
 +static int
-+spiflash_probe_chip (struct spiflash_priv *priv)
++spiflash_probe_chip(struct spiflash_priv *priv)
 +{
 +	u32 sig;
 +	int flash_size;
@@ -251,7 +254,7 @@
 +		flash_size = FLASH_16MB;
 +		break;
 +	default:
-+		printk (KERN_WARNING SPIFLASH "Read of flash device signature failed!\n");
++		pr_warn(SPIFLASH "Read of flash device signature failed!\n");
 +		return 0;
 +	}
 +
@@ -273,7 +276,7 @@
 +		schedule();
 +		remove_wait_queue(&priv->wq, &wait);
 +
-+		if(signal_pending(current))
++		if (signal_pending(current))
 +			return 0;
 +
 +		goto retry;
@@ -301,7 +304,7 @@
 +
 +
 +static int
-+spiflash_erase (struct mtd_info *mtd, struct erase_info *instr)
++spiflash_erase(struct mtd_info *mtd, struct erase_info *instr)
 +{
 +	struct spiflash_priv *priv = to_spiflash(mtd);
 +	const struct opcodes *op;
@@ -333,10 +336,10 @@
 +}
 +
 +static int
-+spiflash_read (struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen, u_char *buf)
++spiflash_read(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen,
++	      u_char *buf)
 +{
 +	struct spiflash_priv *priv = to_spiflash(mtd);
-+	u8 *read_addr;
 +
 +	if (!len)
 +		return 0;
@@ -349,15 +352,15 @@
 +	if (!spiflash_wait_ready(priv, FL_READING))
 +		return -EINTR;
 +
-+	read_addr = (u8 *)(priv->readaddr + from);
-+	memcpy_fromio(buf, read_addr, len);
++	memcpy_fromio(buf, priv->readaddr + from, len);
 +	spiflash_done(priv);
 +
 +	return 0;
 +}
 +
 +static int
-+spiflash_write (struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, const u8 *buf)
++spiflash_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen,
++	       const u8 *buf)
 +{
 +	struct spiflash_priv *priv = to_spiflash(mtd);
 +	u32 opcode, bytes_left;
@@ -434,7 +437,9 @@
 +
 +
 +#if defined CONFIG_MTD_REDBOOT_PARTS || CONFIG_MTD_MYLOADER_PARTS
-+static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", "MyLoader", NULL };
++static const char * const part_probe_types[] = {
++	"cmdlinepart", "RedBoot", "MyLoader", NULL
++};
 +#endif
 +
 +
@@ -443,6 +448,7 @@
 +{
 +	struct spiflash_priv *priv;
 +	struct mtd_info *mtd;
++	struct resource *res;
 +	int index;
 +	int result = 0;
 +
@@ -452,21 +458,34 @@
 +	priv->state = FL_READY;
 +	mtd = &priv->mtd;
 +
-+	priv->mmraddr = ioremap_nocache(SPI_FLASH_MMR, SPI_FLASH_MMR_SIZE);
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
++	if (!res) {
++		dev_err(&pdev->dev, "No MMR resource found\n");
++		goto error;
++	}
++
++	priv->mmraddr = ioremap_nocache(res->start, resource_size(res));
 +	if (!priv->mmraddr) {
-+		printk(KERN_WARNING SPIFLASH "Failed to map flash device\n");
++		dev_warn(&pdev->dev, SPIFLASH "Failed to map flash device\n");
 +		goto error;
 +	}
 +
 +	index = spiflash_probe_chip(priv);
 +	if (!index) {
-+		printk (KERN_WARNING SPIFLASH "Found no serial flash device\n");
++		dev_warn(&pdev->dev, SPIFLASH "Found no flash device\n");
 +		goto error;
 +	}
 +
-+	priv->readaddr = ioremap_nocache(SPI_FLASH_READ, flashconfig_tbl[index].byte_cnt);
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res) {
++		dev_err(&pdev->dev, "No flash readmem resource found\n");
++		goto error;
++	}
++
++	priv->readaddr = ioremap_nocache(res->start,
++					 flashconfig_tbl[index].byte_cnt);
 +	if (!priv->readaddr) {
-+		printk (KERN_WARNING SPIFLASH "Failed to map flash device\n");
++		dev_warn(&pdev->dev, SPIFLASH "Failed to map flash device\n");
 +		goto error;
 +	}
 +
@@ -483,6 +502,8 @@
 +	mtd->_read = spiflash_read;
 +	mtd->_write = spiflash_write;
 +	mtd->owner = THIS_MODULE;
++
++	dev_info(&pdev->dev, "%lld Kbytes flash detected\n", mtd->size >> 10);
 +
 +#if defined CONFIG_MTD_REDBOOT_PARTS || CONFIG_MTD_MYLOADER_PARTS
 +	/* parse redboot partitions */
@@ -501,7 +522,7 @@
 +}
 +
 +static int
-+spiflash_remove (struct platform_device *pdev)
++spiflash_remove(struct platform_device *pdev)
 +{
 +	struct spiflash_priv *priv = platform_get_drvdata(pdev);
 +	struct mtd_info *mtd = &priv->mtd;
@@ -514,36 +535,36 @@
 +	return 0;
 +}
 +
-+struct platform_driver spiflash_driver = {
-+	.driver.name = "spiflash",
++static struct platform_driver spiflash_driver = {
++	.driver.name = "ar2315-spiflash",
 +	.probe = spiflash_probe,
 +	.remove = spiflash_remove,
 +};
 +
-+int __init
-+spiflash_init (void)
++static int __init
++spiflash_init(void)
 +{
 +	return platform_driver_register(&spiflash_driver);
 +}
 +
-+void __exit
-+spiflash_exit (void)
++static void __exit
++spiflash_exit(void)
 +{
 +	return platform_driver_unregister(&spiflash_driver);
 +}
 +
-+module_init (spiflash_init);
-+module_exit (spiflash_exit);
++module_init(spiflash_init);
++module_exit(spiflash_exit);
 +
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("OpenWrt.org, Atheros Communications Inc");
 +MODULE_DESCRIPTION("MTD driver for SPI Flash on Atheros SOC");
 +
 --- /dev/null
-+++ b/arch/mips/include/asm/mach-ar231x/ar2315_spiflash.h
-@@ -0,0 +1,116 @@
++++ b/drivers/mtd/devices/ar2315_spiflash.h
+@@ -0,0 +1,106 @@
 +/*
-+ * SPI Flash Memory support header file.
++ * Atheros AR2315 SPI Flash Memory support header file.
 + *
 + * Copyright (c) 2005, Atheros Communications Inc.
 + * Copyright (C) 2006 FON Technology, SL.
@@ -630,20 +651,10 @@
 +/*
 + * SPI Flash Interface Registers
 + */
-+#define AR531XPLUS_SPI_READ     0x08000000
-+#define AR531XPLUS_SPI_MMR      0x11300000
-+#define AR531XPLUS_SPI_MMR_SIZE 12
 +
-+#define AR531XPLUS_SPI_CTL      0x00
-+#define AR531XPLUS_SPI_OPCODE   0x04
-+#define AR531XPLUS_SPI_DATA     0x08
-+
-+#define SPI_FLASH_READ          AR531XPLUS_SPI_READ
-+#define SPI_FLASH_MMR           AR531XPLUS_SPI_MMR
-+#define SPI_FLASH_MMR_SIZE      AR531XPLUS_SPI_MMR_SIZE
-+#define SPI_FLASH_CTL           AR531XPLUS_SPI_CTL
-+#define SPI_FLASH_OPCODE        AR531XPLUS_SPI_OPCODE
-+#define SPI_FLASH_DATA          AR531XPLUS_SPI_DATA
++#define SPI_FLASH_CTL           0x00
++#define SPI_FLASH_OPCODE        0x04
++#define SPI_FLASH_DATA          0x08
 +
 +#define SPI_CTL_START           0x00000100
 +#define SPI_CTL_BUSY            0x00010000

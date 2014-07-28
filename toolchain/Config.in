@@ -219,6 +219,7 @@ choice
 	config LIBC_USE_MUSL
 		bool "Use musl"
 		select USE_MUSL
+		depends on BROKEN
 		depends on !(mips64 || mips64el)
 
 endchoice
@@ -248,10 +249,11 @@ config INSIGHT
 
 config USE_EGLIBC
 	bool
+	default y if !TOOLCHAINOPTS && !EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN && octeon
 
 config USE_UCLIBC
 	bool
-	default y if !TOOLCHAINOPTS && !EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+	default y if !TOOLCHAINOPTS && !EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN && !octeon
 
 config USE_MUSL
 	bool

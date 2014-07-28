@@ -25,14 +25,14 @@
  	  Ethernet bridge, which means that the different Ethernet segments it
 --- a/net/ipv6/Makefile
 +++ b/net/ipv6/Makefile
-@@ -44,3 +44,4 @@ obj-y += addrconf_core.o exthdrs_core.o
+@@ -44,3 +44,4 @@ obj-y += addrconf_core.o exthdrs_core.o 
  obj-$(CONFIG_INET) += output_core.o protocol.o $(ipv6-offload)
  
  obj-$(subst m,y,$(CONFIG_IPV6)) += inet6_hashtables.o
 +obj-$(subst m,y,$(CONFIG_IPV6)) += inet6_stubs.o
 --- a/net/ipv6/addrconf.c
 +++ b/net/ipv6/addrconf.c
-@@ -1319,7 +1319,7 @@ out:
+@@ -1322,7 +1322,7 @@ out:
  	return ret;
  }
  
@@ -41,7 +41,7 @@
  		       const struct in6_addr *daddr, unsigned int prefs,
  		       struct in6_addr *saddr)
  {
-@@ -1444,7 +1444,6 @@ try_nextdev:
+@@ -1447,7 +1447,6 @@ try_nextdev:
  	in6_ifa_put(hiscore->ifa);
  	return 0;
  }
@@ -49,7 +49,7 @@
  
  int __ipv6_get_lladdr(struct inet6_dev *idev, struct in6_addr *addr,
  		      unsigned char banned_flags)
-@@ -5170,6 +5169,9 @@ int __init addrconf_init(void)
+@@ -5173,6 +5172,9 @@ int __init addrconf_init(void)
  
  	ipv6_addr_label_rtnl_register();
  
@@ -59,7 +59,7 @@
  	return 0;
  errout:
  	rtnl_af_unregister(&inet6_ops);
-@@ -5188,6 +5190,9 @@ void addrconf_cleanup(void)
+@@ -5191,6 +5193,9 @@ void addrconf_cleanup(void)
  	struct net_device *dev;
  	int i;
  

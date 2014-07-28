@@ -43,11 +43,11 @@
  		struct fis_list *new_fl, **prev;
  
  		if (buf[i].name[0] == 0xff) {
-@@ -261,12 +281,13 @@ static int parse_redboot_partitions(stru
+@@ -262,12 +282,13 @@ static int parse_redboot_partitions(stru
  	}
  #endif
  	for ( ; i<nrparts; i++) {
--		if(max_offset < buf[i].flash_base + buf[i].size)
+-		if (max_offset < buf[i].flash_base + buf[i].size)
 -			max_offset = buf[i].flash_base + buf[i].size;
  		parts[i].size = fl->img->size;
  		parts[i].offset = fl->img->flash_base;
@@ -59,14 +59,14 @@
  		strcpy(names, fl->img->name);
  #ifdef CONFIG_MTD_REDBOOT_PARTS_READONLY
  		if (!memcmp(names, "RedBoot", 8) ||
-@@ -296,7 +317,9 @@ static int parse_redboot_partitions(stru
+@@ -297,7 +318,9 @@ static int parse_redboot_partitions(stru
  		fl = fl->next;
  		kfree(tmp_fl);
  	}
--	if(master->size - max_offset >= master->erasesize)
+-	if (master->size - max_offset >= master->erasesize) {
 +
 +	if (master->size - max_offset >=
-+	    mtd_get_offset_erasesize(master, max_offset))
- 	{
++	    mtd_get_offset_erasesize(master, max_offset)) {
  		parts[nrparts].size = master->size - max_offset;
  		parts[nrparts].offset = max_offset;
+ 		parts[nrparts].name = names;

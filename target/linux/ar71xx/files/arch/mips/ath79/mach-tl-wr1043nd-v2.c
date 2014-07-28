@@ -103,6 +103,14 @@ static struct gpio_keys_button tl_wr1043_v2_gpio_keys[] __initdata = {
 	},
 };
 
+static const struct ar8327_led_info tl_wr1043_leds_ar8327[] = {
+	AR8327_LED_INFO(PHY0_0, HW, "tp-link:green:lan4"),
+	AR8327_LED_INFO(PHY1_0, HW, "tp-link:green:lan3"),
+	AR8327_LED_INFO(PHY2_0, HW, "tp-link:green:lan2"),
+	AR8327_LED_INFO(PHY3_0, HW, "tp-link:green:lan1"),
+	AR8327_LED_INFO(PHY4_0, HW, "tp-link:green:wan"),
+};
+
 /* GMAC0 of the AR8327 switch is connected to the QCA9558 SoC via SGMII */
 static struct ar8327_pad_cfg wr1043nd_v2_ar8327_pad0_cfg = {
 	.mode = AR8327_PAD_MAC_SGMII,
@@ -144,6 +152,8 @@ static struct ar8327_platform_data wr1043nd_v2_ar8327_data = {
 		.rxpause = 1,
 	},
 	.led_cfg = &wr1043nd_v2_ar8327_led_cfg,
+	.num_leds = ARRAY_SIZE(tl_wr1043_leds_ar8327),
+	.leds = tl_wr1043_leds_ar8327,
 };
 
 static struct mdio_board_info wr1043nd_v2_mdio0_info[] = {
@@ -153,23 +163,6 @@ static struct mdio_board_info wr1043nd_v2_mdio0_info[] = {
 		.platform_data = &wr1043nd_v2_ar8327_data,
 	},
 };
-
-static void __init wr1043nd_v2_gmac_setup(void)
-{
-	void __iomem *base;
-	u32 t;
-
-	base = ioremap(QCA955X_GMAC_BASE, QCA955X_GMAC_SIZE);
-
-	t = __raw_readl(base + QCA955X_GMAC_REG_ETH_CFG);
-
-	t &= ~(QCA955X_ETH_CFG_RGMII_EN | QCA955X_ETH_CFG_GE0_SGMII);
-	t |= QCA955X_ETH_CFG_RGMII_EN;
-
-	__raw_writel(t, base + QCA955X_GMAC_REG_ETH_CFG);
-
-	iounmap(base);
-}
 
 static void __init tl_wr1043nd_v2_setup(void)
 {
@@ -192,7 +185,7 @@ static void __init tl_wr1043nd_v2_setup(void)
 				    ARRAY_SIZE(wr1043nd_v2_mdio0_info));
 	ath79_register_mdio(0, 0x0);
 
-	wr1043nd_v2_gmac_setup();
+	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
 
 	/* GMAC0 is connected to the RMGII interface */
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;

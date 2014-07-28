@@ -44,19 +44,19 @@ endif
 endef
 
 define Image/cmdline/jffs2-64k
-block2mtd.block2mtd=/dev/sda2,65536 root=/dev/mtdblock0 rootfstype=jffs2
+block2mtd.block2mtd=/dev/sda2,65536 root=/dev/mtdblock2 rootfstype=jffs2
 endef
 
 define Image/cmdline/jffs2-128k
-block2mtd.block2mtd=/dev/sda2,131072 root=/dev/mtdblock0 rootfstype=jffs2
+block2mtd.block2mtd=/dev/sda2,131072 root=/dev/mtdblock2 rootfstype=jffs2
 endef
 
-define Image/cmdline/ext2
-root=/dev/sda2 rootfstype=ext2
+define Image/cmdline/ext4
+root=/dev/sda2 rootfstype=ext4
 endef
 
 define Image/cmdline/squashfs
-block2mtd.block2mtd=/dev/sda2,65536 root=/dev/mtdblock0 rootfstype=squashfs
+block2mtd.block2mtd=/dev/sda2,65536,rootfs root=/dev/mtdblock2 rootfstype=squashfs
 endef
 
 define Image/cmdline/yaffs2

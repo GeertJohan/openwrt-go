@@ -15,7 +15,7 @@ MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 CPU_TYPE:=arm1176jzf-s
 CPU_SUBTYPE:=vfp
 
-LINUX_VERSION:=3.10.26
+LINUX_VERSION:=3.10.49
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += brcm2708-gpu-fw kmod-usb-hid kmod-sound-core kmod-sound-arm-bcm2835
@@ -24,5 +24,7 @@ define Target/Description
 	Build firmware image for Broadcom BCM2708/BCM2835 SoC devices.
 	Currently produces SD Card image for Raspberry Pi.
 endef
+
+KERNELNAME="Image"
 
 $(eval $(call BuildTarget))

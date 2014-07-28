@@ -10,10 +10,26 @@ OTHER_MENU:=Other modules
 WATCHDOG_DIR:=watchdog
 
 
+define KernelPackage/6lowpan-iphc
+  USBMENU:=$(OTHER_MENU)
+  TITLE:=6lowpan shared code
+  DEPENDS:=@LINUX_3_14
+  KCONFIG:=CONFIG_6LOWPAN_IPHC
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/net/ieee802154/6lowpan_iphc.ko
+  AUTOLOAD:=$(call Autoprobe,6lowpan_iphc)
+endef
+
+define KernelPackage/6lowpan-iphc/description
+  Shared 6lowpan code for IEEE 802.15.4 and Bluetooth.
+endef
+
+$(eval $(call KernelPackage,6lowpan-iphc))
+
 define KernelPackage/bluetooth
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-crypto-hash
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-crypto-hash +LINUX_3_14:kmod-6lowpan-iphc
   KCONFIG:= \
 	CONFIG_BLUEZ \
 	CONFIG_BLUEZ_L2CAP \
@@ -705,10 +721,17 @@ define KernelPackage/zram
   KCONFIG:= \
 	CONFIG_ZSMALLOC \
 	CONFIG_ZRAM \
-	CONFIG_ZRAM_DEBUG=n
+	CONFIG_ZRAM_DEBUG=n \
+	CONFIG_PGTABLE_MAPPING=n
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.14.0)),1)
+  FILES:=\
+	$(LINUX_DIR)/mm/zsmalloc.ko \
+	$(LINUX_DIR)/drivers/block/zram/zram.ko
+else
   FILES:= \
 	$(LINUX_DIR)/drivers/staging/zsmalloc/zsmalloc.ko \
 	$(LINUX_DIR)/drivers/staging/zram/zram.ko
+endif
   AUTOLOAD:=$(call AutoLoad,20,zsmalloc zram)
 endef
 
@@ -750,6 +773,24 @@ define KernelPacakge/pps/description
 endef
 
 $(eval $(call KernelPackage,pps))
+
+
+define KernelPackage/pps-gpio
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=PPS client using GPIO
+  DEPENDS:=+kmod-pps
+  KCONFIG:=CONFIG_PPS_CLIENT_GPIO
+  FILES:=$(LINUX_DIR)/drivers/pps/clients/pps-gpio.ko
+  AUTOLOAD:=$(call AutoLoad,18,pps-gpio,1)
+endef
+
+define KernelPacakge/pps-gpio/description
+ Support for a PPS source using GPIO. To be useful you must
+ also register a platform device specifying the GPIO pin and
+ other options, usually in your board setup.
+endef
+
+$(eval $(call KernelPackage,pps-gpio))
 
 
 define KernelPackage/ptp
@@ -807,12 +848,14 @@ define KernelPackage/thermal
   HIDDEN:=1
   KCONFIG:= \
 	CONFIG_THERMAL \
+	CONFIG_THERMAL_OF=y \
 	CONFIG_THERMAL_DEFAULT_GOV_STEP_WISE=y \
 	CONFIG_THERMAL_DEFAULT_GOV_FAIR_SHARE=n \
 	CONFIG_THERMAL_DEFAULT_GOV_USER_SPACE=n \
 	CONFIG_THERMAL_GOV_FAIR_SHARE=n \
 	CONFIG_THERMAL_GOV_STEP_WISE=y \
 	CONFIG_THERMAL_GOV_USER_SPACE=n \
+	CONFIG_THERMAL_HWMON=y \
 	CONFIG_THERMAL_EMULATION=n
   FILES:=$(LINUX_DIR)/drivers/thermal/thermal_sys.ko
   AUTOLOAD:=$(call AutoProbe,thermal_sys)

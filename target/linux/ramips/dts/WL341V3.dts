@@ -21,7 +21,7 @@
 			read-only;
 		};
 
-		partition@20000 {
+		boardnvram: partition@20000 {
 			label = "board-nvram";
 			reg = <0x20000 0x10000>;
 			read-only;
@@ -48,8 +48,16 @@
 		};
 	};
 
+	ethernet@10100000 {
+		mtd-mac-address = <&boardnvram 0xffa0>;
+	};
+
 	esw@10110000 {
 		ralink,portmap = <0x3e>;
+	};
+
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&boardnvram 0xfd70>;
 	};
 
 	gpio-leds {

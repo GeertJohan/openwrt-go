@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2011-2013 OpenWrt.org
+# Copyright (C) 2011-2014 OpenWrt.org
 #
 
 [ -e /etc/config/ubootenv ] && exit 0
@@ -16,16 +16,25 @@ board=$(ar71xx_board_name)
 case "$board" in
 all0258n | \
 cap4200ag | \
+eap300v2 | \
 hornet-ub | \
 hornet-ub-x2 | \
 mr600 | \
-mr600v2)
+mr600v2 | \
+om5p | \
+tube2h | \
+wndr3700)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
+	;;
+nbg6716)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
 	;;
 alfa-ap96 | \
 all0315n | \
 om2p | \
+om2pv2 | \
 om2p-hs | \
+om2p-hsv2 | \
 om2p-lc)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x40000" "0x40000"
 	;;

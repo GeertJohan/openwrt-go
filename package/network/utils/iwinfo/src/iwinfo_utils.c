@@ -113,6 +113,7 @@ int iwinfo_ifmac(const char *ifname)
 	if (iwinfo_ioctl(SIOCGIFHWADDR, &ifr))
 		return 0;
 
+	ifr.ifr_hwaddr.sa_data[0] |= 0x02;
 	ifr.ifr_hwaddr.sa_data[1]++;
 	ifr.ifr_hwaddr.sa_data[2]++;
 
@@ -131,7 +132,8 @@ struct iwinfo_hardware_entry * iwinfo_hardware(struct iwinfo_hardware_id *id)
 {
 	FILE *db;
 	char buf[256] = { 0 };
-	static struct iwinfo_hardware_entry e, *rv = NULL;
+	static struct iwinfo_hardware_entry e;
+	struct iwinfo_hardware_entry *rv = NULL;
 
 	if (!(db = fopen(IWINFO_HARDWARE_FILE, "r")))
 		return NULL;
@@ -182,7 +184,7 @@ int iwinfo_hardware_id_from_mtd(struct iwinfo_hardware_id *id)
 
 	while (fgets(buf, sizeof(buf), mtd) > 0)
 	{
-		if (fscanf(mtd, "mtd%d: %*x %x %127s", &off, &len, buf) < 3 ||
+		if (fscanf(mtd, "mtd%d: %x %*x %127s", &off, &len, buf) < 3 ||
 		    (strcmp(buf, "\"boardconfig\"") && strcmp(buf, "\"EEPROM\"") &&
 		     strcmp(buf, "\"factory\"")))
 		{

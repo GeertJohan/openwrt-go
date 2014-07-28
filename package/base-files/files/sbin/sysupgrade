@@ -1,5 +1,6 @@
 #!/bin/sh
 . /lib/functions.sh
+. /lib/functions/system.sh
 
 # initialize defaults
 RAMFS_COPY_BIN=""	# extra programs for temporary ramfs root
@@ -124,6 +125,8 @@ sysupgrade_image_check="platform_check_image"
 	sysupgrade_init_conffiles="add_overlayfiles"
 
 include /lib/upgrade
+
+[ "$1" = "nand" ] && nand_upgrade_stage2 $@
 
 do_save_conffiles() {
 	local conf_tar="${1:-$CONF_TAR}"

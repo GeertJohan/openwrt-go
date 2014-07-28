@@ -8,13 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=polarssl
-PKG_VERSION:=1.2.9
+PKG_VERSION:=1.3.7
 PKG_RELEASE:=1
 PKG_USE_MIPS16:=0
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-gpl.tgz
 PKG_SOURCE_URL:=https://polarssl.org/code/releases
-PKG_MD5SUM:=3d8e01537e747d7997993c70f2e108db
+PKG_MD5SUM:=b656e4c83ee94f93d19eb0832fd7f976
+
+PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -35,6 +37,7 @@ $(call Package/polarssl/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE+= (library)
+  ABI_VERSION:=$(PKG_VERSION)
 endef
 
 define Package/libpolarssl/description
@@ -42,24 +45,12 @@ $(call Package/polarssl/Default/description)
 This package contains the PolarSSL library.
 endef
 
-define Package/polarssl-progs
-$(call Package/polarssl/Default)
-  SECTION:=utils
-  CATEGORY:=Utilities
-  DEPENDS:=+libpolarssl
-  TITLE+= (programs)
-endef
-
-define Package/polarssl-progs/description
-$(call Package/polarssl/Default/description)
-This package contains the PolarSSL programs.
-endef
-
 PKG_INSTALL:=1
 
 CMAKE_OPTIONS += \
 	-DCMAKE_BUILD_TYPE:String="Release" \
 	-DUSE_SHARED_POLARSSL_LIBRARY:Bool=ON \
+	-DENABLE_TESTING:Bool=OFF \
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
@@ -73,10 +64,4 @@ define Package/libpolarssl/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libpolarssl.so* $(1)/usr/lib/
 endef
 
-define Package/polarssl-progs/install
-	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/* $(1)/usr/bin/
-endef
-
 $(eval $(call BuildPackage,libpolarssl))
-$(eval $(call BuildPackage,polarssl-progs))

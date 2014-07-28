@@ -34,7 +34,7 @@ define Image/BuildKernel/Template
  endif
 
  ifneq ($(1),)
-	$(CP) $(LINUX_DIR)/arch/arm/boot/dts/kirkwood-$(1).dtb $(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb
+	$(CP) $(DTS_DIR)/kirkwood-$(1).dtb $(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb
 
 	$(CP) $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-zImage
 	cat $(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb >> $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-zImage
@@ -117,11 +117,17 @@ Image/InstallKernel/Template/Generic=$(call Image/InstallKernel/Template)
 Image/BuildKernel/Template/DOCKSTAR=$(call Image/BuildKernel/Template,dockstar)
 Image/InstallKernel/Template/DOCKSTAR=$(call Image/InstallKernel/Template,dockstar)
 
-Image/BuildKernel/Template/ICONNECT=$(call Image/BuildKernel/Template,iconnect)
-Image/InstallKernel/Template/ICONNECT=$(call Image/InstallKernel/Template,iconnect)
+Image/BuildKernel/Template/EA4500=$(call Image/BuildKernel/Template,ea4500)
+Image/InstallKernel/Template/EA4500=$(call Image/InstallKernel/Template,ea4500)
+
+Image/BuildKernel/Template/GOFLEXNET=$(call Image/BuildKernel/Template,goflexnet)
+Image/InstallKernel/Template/GOFLEXNET=$(call Image/InstallKernel/Template,goflexnet)
 
 Image/BuildKernel/Template/IB62X0=$(call Image/BuildKernel/Template,ib62x0)
 Image/InstallKernel/Template/IB62X0=$(call Image/InstallKernel/Template,ib62x0)
+
+Image/BuildKernel/Template/ICONNECT=$(call Image/BuildKernel/Template,iconnect)
+Image/InstallKernel/Template/ICONNECT=$(call Image/InstallKernel/Template,iconnect)
 
 Image/BuildKernel/Template/POGOE02=$(call Image/BuildKernel/Template,pogo_e02)
 Image/InstallKernel/Template/POGOE02=$(call Image/InstallKernel/Template,pogo_e02)

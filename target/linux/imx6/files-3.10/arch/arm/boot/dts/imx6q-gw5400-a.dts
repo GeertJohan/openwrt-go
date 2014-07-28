@@ -38,10 +38,6 @@
 		bootargs = "console=ttymxc1,115200";
 	};
 
-	memory {
-		reg = <0x10000000 0x40000000>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -63,6 +59,10 @@
 			gpios = <&gpio4 15 1>; /* 111 -> MX6_LOCLED# */
 			default-state = "off";
 		};
+	};
+
+	memory {
+		reg = <0x10000000 0x40000000>;
 	};
 
 	regulators {
@@ -406,13 +406,7 @@
 
 &uart2 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart2_2>;
-	status = "okay";
-};
-
-&uart3 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart3_1>;
+	pinctrl-0 = <&pinctrl_uart2_3>;
 	status = "okay";
 };
 

@@ -49,6 +49,7 @@ define Host/Compile
 	$(call cc,mkchkimg)
 	$(call cc,mkzcfw cyg_crc32)
 	$(call cc,spw303v)
+	$(call cc,zyxbcm)
 	$(call cc,trx2edips)
 	$(call cc,xorimage)
 	$(call cc,buffalo-enc buffalo-lib, -Wall)
@@ -66,6 +67,9 @@ define Host/Compile
 	$(call cc,mkporayfw, -Wall)
 	#$(call cc,mkhilinkfw, -lcrypto)
 	$(call cc,mkdcs932, -Wall)
+	$(call cc,mkheader_gemtek,-lz)
+	$(call cc,mkrtn56uimg, -lz)
+	$(call cc,dgn3500sum)
 endef
 
 define Host/Install

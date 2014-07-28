@@ -13,7 +13,7 @@ endef
 
 define Image/BuildKernel/Template
 
-	$(CP) $(LINUX_DIR)/arch/arm/boot/dts/$(1).dtb $(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb
+	$(CP) $(DTS_DIR)/$(1).dtb $(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb
 
 	$(call Image/BuildKernel/MkFIT,$(1),$(KDIR)/zImage,$(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb,none,0x10008000,0x10008000)
 	$(CP) $(KDIR)/fit-$(1).itb $(BIN_DIR)/$(IMG_PREFIX)-$(1)-fit-uImage.itb
@@ -42,9 +42,9 @@ endef
 
 define Image/InstallKernel/Template
 
- ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_KERNEL),)
+ ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_KERNEL)$(CONFIG_TARGET_imx6_VENTANA),)
 	$(INSTALL_DIR) $(TARGET_DIR)/boot
-   ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_UIMAGE),)
+   ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_UIMAGE)$(CONFIG_TARGET_imx6_VENTANA),)
 	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-uImage $(TARGET_DIR)/boot/
 	ln -sf $(IMG_PREFIX)-uImage $(TARGET_DIR)/boot/uImage
    endif
@@ -59,7 +59,7 @@ define Image/InstallKernel/Template
    endif
  endif
 
- ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_DTB),)
+ ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_DTB)$(CONFIG_TARGET_imx6_VENTANA),)
 	$(INSTALL_DIR) $(TARGET_DIR)/boot
 	$(foreach dts,$(shell echo $(1)), \
 		$(CP) $(BIN_DIR)/$(IMG_PREFIX)-$(dts).dtb $(TARGET_DIR)/boot/ ; \

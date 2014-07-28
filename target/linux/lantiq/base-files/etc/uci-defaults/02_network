@@ -28,6 +28,30 @@ set network.wan6.proto='dhcpv6'
 EOF
 }
 
+set_adsl_modem() {
+	local annex=$1
+	local firmware=$2
+	uci batch <<EOF
+set network.dsl='adsl'
+set network.dsl.annex='$annex'
+set network.dsl.firmware='$firmware'
+EOF
+}
+
+set_vdsl_modem() {
+	local annex=$1
+	local firmware=$2
+	local tone=$3
+	local xfer_mode=$4
+	uci batch <<EOF
+set network.dsl='vdsl'
+set network.dsl.annex='$annex'
+set network.dsl.firmware='$firmware'
+set network.dsl.tone='$tone'
+set network.dsl.xfer_mode='$xfer_mode'
+EOF
+}
+
 . /lib/functions/uci-defaults.sh
 . /lib/functions/lantiq.sh
 
@@ -38,12 +62,13 @@ ucidef_set_interface_lan 'eth0'
 
 vpi=1
 vci=32
+annex="a"
 encaps="llc"
 payload="bridged"
 lan_mac=""
 wan_mac=""
 
-board=$(lantiq_board_id)
+board=$(lantiq_board_name)
 
 case "$board" in
 # adm6996
@@ -72,6 +97,15 @@ ARV4519PW|ARV7510PW22|ARV7518PW|ARV752DPW22)
 	ucidef_set_interface_lan "eth0.1"
 	ucidef_add_switch "switch0" "1" "1"
 	ucidef_add_switch_vlan "switch0" "1" "0t 2 3 4 5"
+	;;
+
+# rtl8306g
+ARV7519PW)
+	lan_mac=$(mtd_get_mac_binary board_config 22)
+	wan_mac=$(macaddr_add "$lan_mac" 1)
+	ucidef_set_interface_lan "eth0.1"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 4t"
 	;;
 
 WBMR)
@@ -104,19 +138,43 @@ H201L)
 	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 4t"
 	;;
 
+#rtl8306g
 P2601HNFX)
 	ucidef_set_interface_lan "eth0.1"
 	ucidef_add_switch "switch0" "1" "1"
-	ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 5t"
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5t"
+	;;
+
+P2812HNUFX)
+	ucidef_set_interface_lan 'eth0.1'
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 4 5 6t"
 	;;
 
 TDW8970)
 	lan_mac=$(mtd_get_mac_binary boardconfig 61696)
 	wan_mac=$(macaddr_add "$lan_mac" 1)
 	;;
+
+ARV7519*)
+	lan_mac=$(mtd_get_mac_binary boardconfig 22)
+	wan_mac=$(macaddr_add "$lan_mac" 1)
+	;;
+
+BTHOMEHUBV2B)
+	lan_mac=$(mtd_get_mac_ascii uboot_env ethaddr)
+	wan_mac=$(macaddr_add "$lan_mac" 1)
+	;;
 esac
 
 [ -z "$(ls /lib/modules/`uname -r`/ltq_atm*)" ] || set_atm_wan "$vpi" "$vci" "$encaps" "$payload"
+
+if [ -n "$(grep "system type.*: VR9" /proc/cpuinfo)" ]; then
+	set_vdsl_modem "$annex" "/lib/firmware/vdsl.bin" "av" "ptm"
+else
+	set_adsl_modem "$annex" "/lib/firmware/adsl.bin"
+fi
+
 [ -n "$lan_mac" ] && ucidef_set_interface_macaddr lan $lan_mac
 [ -n "$wan_mac" ] && ucidef_set_interface_macaddr wan $wan_mac
 

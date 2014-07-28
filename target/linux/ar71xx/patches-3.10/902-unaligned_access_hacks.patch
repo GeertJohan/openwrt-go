@@ -328,7 +328,7 @@
  
 --- a/net/ipv6/ip6_tunnel.c
 +++ b/net/ipv6/ip6_tunnel.c
-@@ -1122,9 +1122,9 @@ ip6ip6_tnl_xmit(struct sk_buff *skb, str
+@@ -1273,9 +1273,9 @@ ip6ip6_tnl_xmit(struct sk_buff *skb, str
  
  	dsfield = ipv6_get_dsfield(ipv6h);
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_TCLASS)
@@ -557,7 +557,7 @@
  #define IGMP_HOST_MEMBERSHIP_REPORT	0x12	/* Ditto */
 --- a/net/core/flow_dissector.c
 +++ b/net/core/flow_dissector.c
-@@ -152,7 +152,7 @@ ipv6:
+@@ -157,7 +157,7 @@ ipv6:
  		ports = skb_header_pointer(skb, nhoff + poff,
  					   sizeof(_ports), &_ports);
  		if (ports)
@@ -886,7 +886,7 @@
  		tpi->seq = 0;
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -3625,14 +3625,16 @@ static bool tcp_parse_aligned_timestamp(
+@@ -3624,14 +3624,16 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  
@@ -900,8 +900,9 @@
 -		tp->rx_opt.rcv_tsval = ntohl(*ptr);
 +		tp->rx_opt.rcv_tsval = get_unaligned_be32(ptr);
  		++ptr;
- 		if (*ptr)
+-		if (*ptr)
 -			tp->rx_opt.rcv_tsecr = ntohl(*ptr) - tp->tsoffset;
++		if (net_hdr_word(ptr))
 +			tp->rx_opt.rcv_tsecr = get_unaligned_be32(ptr) -
 +					       tp->tsoffset;
  		else

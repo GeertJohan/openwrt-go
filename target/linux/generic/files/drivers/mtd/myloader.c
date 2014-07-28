@@ -89,12 +89,8 @@ static int myloader_parse_partitions(struct mtd_info *master,
 		goto out_free_buf;
 	}
 
-	/*
-	 * The MyLoader and the Partition Table is always present.
-	 * Additionally, an extra partition is generated to cover
-	 * everything after the bootloader.
-	 */
-	num_parts = 3;
+	/* The MyLoader and the Partition Table is always present */
+	num_parts = 2;
 
 	/* Detect number of used partitions */
 	for (i = 0; i < MYLO_MAX_PARTITIONS; i++) {
@@ -122,13 +118,6 @@ static int myloader_parse_partitions(struct mtd_info *master,
 	mtd_part->offset = 0;
 	mtd_part->size = offset;
 	mtd_part->mask_flags = MTD_WRITEABLE;
-	mtd_part++;
-	names += PART_NAME_LEN;
-
-	strncpy(names, "firmware", PART_NAME_LEN);
-	mtd_part->name = names;
-	mtd_part->offset = offset;
-	mtd_part->size = master->size - offset;
 	mtd_part++;
 	names += PART_NAME_LEN;
 
@@ -175,7 +164,9 @@ static struct mtd_part_parser myloader_mtd_parser = {
 
 static int __init myloader_mtd_parser_init(void)
 {
-	return register_mtd_parser(&myloader_mtd_parser);
+	register_mtd_parser(&myloader_mtd_parser);
+
+	return 0;
 }
 
 static void __exit myloader_mtd_parser_exit(void)

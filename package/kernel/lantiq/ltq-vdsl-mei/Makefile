@@ -17,6 +17,8 @@ PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
 PKG_MD5SUM:=cf2fccc1bc72390b2aec46650abf2f20
 PKG_FIXUP:=autoreconf
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
+PKG_USE_MIPS16:=0
+PKG_CHECK_FORMAT_SECURITY:=0
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -34,6 +36,9 @@ define KernelPackage/ltq-vdsl-vr9-mei/description
 endef
 
 #DEBUG=-DDEBUG_PRINT=1
+
+MAKE_FLAGS += \
+	SHELL="$(BASH)"
 
 CONFIGURE_ARGS += \
 	--enable-kernelincl="$(LINUX_DIR)/include" \

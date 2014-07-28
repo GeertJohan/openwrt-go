@@ -12,6 +12,12 @@ get_status_led() {
 	3g300m | w150m)
 		status_led="tenda:blue:ap"
 		;;
+	ar725w)
+		status_led="ar725w:green:power"
+		;;
+	awapn2403)
+		status_led="asiarf:green:wps"
+		;;
 	argus-atp52b)
 		status_led="argus-atp52b:green:run"
 		;;
@@ -23,6 +29,9 @@ get_status_led() {
 		;;
 	br6425 | br-6475nd)
 		status_led="edimax:green:power"
+		;;
+	cy-swr1100)
+		status_led="samsung:blue:wps"
 		;;
 	d105)
 		status_led="d105:red:power"
@@ -64,6 +73,9 @@ get_status_led() {
 	m4)
 		status_led="m4:blue:status"
 		;;
+	mlw221)
+		status_led="kingston:green:status"
+		;;
 	mofi3500-3gn)
 		status_led="mofi3500-3gn:green:status"
 		;;
@@ -89,6 +101,9 @@ get_status_led() {
 	pwh2004)
 		status_led="pwh2004:green:power"
 		;;
+	px4885)
+		status_led="7links:orange:wifi"
+		;;
 	rt-n15)
 		status_led="rt-n15:blue:power"
 		;;
@@ -97,6 +112,9 @@ get_status_led() {
 		;;
 	rt-n56u | wl-330n | wl-330n3g)
 		status_led="asus:blue:power"
+		;;
+	rut5xx)
+		status_led="rut5xx:green:status"
 		;;
 	sl-r7205)
 		status_led="sl-r7205:green:status"
@@ -137,6 +155,9 @@ get_status_led() {
 	wr512-3gn)
 		status_led="wr512:green:wps"
 		;;
+	wr8305rt)
+		status_led="wr8305rt:sys"
+		;;
 	wnce2001)
 		status_led="netgear:green:power"
 		;;
@@ -160,7 +181,10 @@ get_status_led() {
 		;;
 	f7c027)
 		status_led="belkin:orange:status"
-        ;;
+		;;
+	na930)
+		status_led="na930:blue:power"
+		;;
 	esac
 }
 

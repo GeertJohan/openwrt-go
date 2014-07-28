@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -627,6 +627,8 @@ static struct board_info __initdata boar
+@@ -613,6 +613,8 @@ static struct board_info __initdata boar
  	.has_uart0			= 1,
  	.has_enet0			= 1,
  	.enet0 = {
@@ -9,7 +9,7 @@
  		.force_speed_100	= 1,
  		.force_duplex_full	= 1,
  	},
-@@ -670,6 +672,8 @@ static struct board_info __initdata boar
+@@ -656,6 +658,8 @@ static struct board_info __initdata boar
  	.has_uart0			= 1,
  	.has_enet0			= 1,
  	.enet0 = {
@@ -18,7 +18,7 @@
  		.force_speed_100	= 1,
  		.force_duplex_full	= 1,
  	},
-@@ -955,6 +959,8 @@ static struct board_info __initdata boar
+@@ -941,6 +945,8 @@ static struct board_info __initdata boar
  		.use_internal_phy	= 1,
  	},
  	.enet1 = {
@@ -27,7 +27,7 @@
  		.force_speed_100	= 1,
  		.force_duplex_full	= 1,
  	},
-@@ -1027,6 +1033,8 @@ static struct board_info __initdata boar
+@@ -1013,6 +1019,8 @@ static struct board_info __initdata boar
  	},
  
  	.enet1 = {
@@ -36,7 +36,7 @@
  		.force_speed_100	= 1,
  		.force_duplex_full	= 1,
  	},
-@@ -1256,6 +1264,8 @@ static struct board_info __initdata boar
+@@ -1242,6 +1250,8 @@ static struct board_info __initdata boar
  		.use_internal_phy	= 1,
  	},
  	.enet1 = {
@@ -45,7 +45,7 @@
  		.force_speed_100	= 1,
  		.force_duplex_full	= 1,
  	},
-@@ -1431,6 +1441,8 @@ static struct board_info __initdata boar
+@@ -1417,6 +1427,8 @@ static struct board_info __initdata boar
  	},
  
  	.enet1 = {
@@ -54,20 +54,34 @@
  		.force_speed_100	= 1,
  		.force_duplex_full	= 1,
  	},
-@@ -1545,6 +1557,12 @@ static struct board_info __initdata boar
+@@ -1607,6 +1619,8 @@ static struct board_info __initdata boar
  		.use_internal_phy	= 1,
  	},
  	.enet1 = {
 +		.has_phy		= 1,
 +		.phy_id			= 0,
-+		.has_phy		= 1,
-+		.phy_id			= 0,
+ 		.force_speed_100	= 1,
+ 		.force_duplex_full	= 1,
+ 	},
+@@ -1628,6 +1642,8 @@ static struct board_info __initdata boar
+ 		.use_internal_phy	= 1,
+ 	},
+ 	.enet1 = {
 +		.has_phy		= 1,
 +		.phy_id			= 0,
  		.force_speed_100	= 1,
  		.force_duplex_full	= 1,
  	},
-@@ -1920,6 +1938,8 @@ static struct board_info __initdata boar
+@@ -1647,6 +1663,8 @@ static struct board_info __initdata boar
+ 		.use_internal_phy	= 1,
+ 	},
+ 	.enet1 = {
++		.has_phy		= 1,
++		.phy_id			= 0,
+ 		.force_speed_100	= 1,
+ 		.force_duplex_full	= 1,
+ 	},
+@@ -2018,6 +2036,8 @@ static struct board_info __initdata boar
  	},
  
  	.enet1 = {
@@ -76,7 +90,7 @@
  		.force_speed_100	= 1,
  		.force_duplex_full	= 1,
  	},
-@@ -1972,6 +1992,8 @@ static struct board_info __initdata boar
+@@ -2070,6 +2090,8 @@ static struct board_info __initdata boar
  	},
  
  	.enet1 = {
@@ -85,7 +99,7 @@
  		.force_speed_100	= 1,
  		.force_duplex_full	= 1,
  	},
-@@ -2112,6 +2134,8 @@ static struct board_info __initdata boar
+@@ -2211,6 +2233,8 @@ static struct board_info __initdata boar
  	},
  
  	.enet1 = {
@@ -94,7 +108,7 @@
  		.force_speed_100	= 1,
  		.force_duplex_full	= 1,
  	},
-@@ -2229,6 +2253,8 @@ static struct board_info __initdata boar
+@@ -2328,6 +2352,8 @@ static struct board_info __initdata boar
  	},
  
  	.enet1 = {

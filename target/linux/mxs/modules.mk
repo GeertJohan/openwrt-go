@@ -49,37 +49,6 @@ endef
 
 $(eval $(call KernelPackage,usb-chipidea-imx,1))
 
-define KernelPackage/usb-mxs-phy
-    TITLE:=Support for Freescale MXS USB PHY controllers
-    DEPENDS:=+kmod-usb-chipidea-imx
-    KCONFIG:= \
-	CONFIG_USB_MXS_PHY
-    FILES:=$(LINUX_DIR)/drivers/usb/phy/phy-mxs-usb.ko
-    AUTOLOAD:=$(call AutoLoad,50,phy-mxs-usb,1)
-    $(call AddDepends/usb)
-endef
-
-define KernelPackage/usb-mxs-phy/description
-    Kernel support for Freescale MXS USB PHY controllers
-endef
-
-$(eval $(call KernelPackage,usb-mxs-phy,1))
-
-define KernelPackage/usb-net-smsc95xx
-    TITLE:=SMSC95xx USB/2.0 Ethernet driver
-    DEPENDS:=@TARGET_mxs
-    KCONFIG:=CONFIG_USB_NET_SMSC95XX
-    FILES:=$(LINUX_DIR)/drivers/net/usb/smsc95xx.ko
-    AUTOLOAD:=$(call AutoLoad,64,smsc95xx)
-    $(call AddDepends/usb-net)
-endef
-
-define KernelPackage/usb-net-smsc95xx/description
-    Kernel support for SMSC95xx USB/2.0 Ethernet driver
-endef
-
-$(eval $(call KernelPackage,usb-net-smsc95xx))
-
 define KernelPackage/sound-soc-mxs
     TITLE:=Freescale i.MX23/i.MX28 built-in SoC sound support
     KCONFIG:= \

@@ -12,11 +12,11 @@ BOARDNAME:=Marvell Orion
 SUBTARGETS:=generic harddisk
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=3.3.8
+LINUX_VERSION:=3.10.44
 
 include $(INCLUDE_DIR)/target.mk
 
-KERNELNAME:="zImage uImage"
+KERNELNAME:="zImage"
 
 DEFAULT_PACKAGES += kmod-ath9k kmod-crypto-mv-cesa wpad-mini kmod-i2c-core kmod-i2c-mv64xxx kmod-rtc-isl1208
 

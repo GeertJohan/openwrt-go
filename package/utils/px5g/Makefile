@@ -10,15 +10,17 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=px5g
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
+PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)
+PKG_USE_MIPS16:=0
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/px5g
   SECTION:=utils
   CATEGORY:=Utilities
-  TITLE:=Standalone X.509 certificate generator
+  TITLE:=X.509 certificate generator (using PolarSSL)
   MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
+  DEPENDS:=+libpolarssl
 endef
 
 define Package/px5g/description
@@ -29,7 +31,10 @@ endef
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) ./src/* $(PKG_BUILD_DIR)/
+endef
+
+define Build/Compile
+	$(TARGET_CC) $(TARGET_CFLAGS) -o $(PKG_BUILD_DIR)/px5g px5g.c -lpolarssl
 endef
 
 define Package/px5g/install

@@ -129,7 +129,7 @@
  
  			tp->phy_flags |= TG3_PHYFLG_IS_LOW_POWER;
  
-@@ -11783,7 +11790,7 @@ static int tg3_get_settings(struct net_d
+@@ -11782,7 +11789,7 @@ static int tg3_get_settings(struct net_d
  		struct phy_device *phydev;
  		if (!(tp->phy_flags & TG3_PHYFLG_IS_CONNECTED))
  			return -EAGAIN;
@@ -138,7 +138,7 @@
  		return phy_ethtool_gset(phydev, cmd);
  	}
  
-@@ -11850,7 +11857,7 @@ static int tg3_set_settings(struct net_d
+@@ -11849,7 +11856,7 @@ static int tg3_set_settings(struct net_d
  		struct phy_device *phydev;
  		if (!(tp->phy_flags & TG3_PHYFLG_IS_CONNECTED))
  			return -EAGAIN;
@@ -147,7 +147,7 @@
  		return phy_ethtool_sset(phydev, cmd);
  	}
  
-@@ -12007,7 +12014,7 @@ static int tg3_nway_reset(struct net_dev
+@@ -12006,7 +12013,7 @@ static int tg3_nway_reset(struct net_dev
  	if (tg3_flag(tp, USE_PHYLIB)) {
  		if (!(tp->phy_flags & TG3_PHYFLG_IS_CONNECTED))
  			return -EAGAIN;
@@ -156,7 +156,7 @@
  	} else {
  		u32 bmcr;
  
-@@ -12123,7 +12130,7 @@ static int tg3_set_pauseparam(struct net
+@@ -12124,7 +12131,7 @@ static int tg3_set_pauseparam(struct net
  		u32 newadv;
  		struct phy_device *phydev;
  
@@ -165,7 +165,7 @@
  
  		if (!(phydev->supported & SUPPORTED_Pause) ||
  		    (!(phydev->supported & SUPPORTED_Asym_Pause) &&
-@@ -13557,7 +13564,7 @@ static int tg3_ioctl(struct net_device *
+@@ -13558,7 +13565,7 @@ static int tg3_ioctl(struct net_device *
  		struct phy_device *phydev;
  		if (!(tp->phy_flags & TG3_PHYFLG_IS_CONNECTED))
  			return -EAGAIN;
@@ -174,7 +174,7 @@
  		return phy_mii_ioctl(phydev, ifr, cmd);
  	}
  
-@@ -17190,8 +17197,10 @@ static int tg3_init_one(struct pci_dev *
+@@ -17194,8 +17201,10 @@ static int tg3_init_one(struct pci_dev *
  			tg3_flag_set(tp, FLUSH_POSTED_WRITES);
  		if (ssb_gige_one_dma_at_once(pdev))
  			tg3_flag_set(tp, ONE_DMA_AT_ONCE);
@@ -186,7 +186,7 @@
  		if (ssb_gige_is_rgmii(pdev))
  			tg3_flag_set(tp, RGMII_MODE);
  	}
-@@ -17461,7 +17470,7 @@ static int tg3_init_one(struct pci_dev *
+@@ -17464,7 +17473,7 @@ static int tg3_init_one(struct pci_dev *
  
  	if (tp->phy_flags & TG3_PHYFLG_IS_CONNECTED) {
  		struct phy_device *phydev;
@@ -195,33 +195,3 @@
  		netdev_info(dev,
  			    "attached PHY driver [%s] (mii_bus:phy_addr=%s)\n",
  			    phydev->drv->name, dev_name(&phydev->dev));
---- a/include/linux/ssb/ssb_driver_gige.h
-+++ b/include/linux/ssb/ssb_driver_gige.h
-@@ -108,6 +108,16 @@ static inline int ssb_gige_get_macaddr(s
- 	return 0;
- }
- 
-+/* Get the device phy address */
-+static inline int ssb_gige_get_phyaddr(struct pci_dev *pdev)
-+{
-+	struct ssb_gige *dev = pdev_to_ssb_gige(pdev);
-+	if (!dev)
-+		return -ENODEV;
-+
-+	return dev->dev->bus->sprom.et0phyaddr;
-+}
-+
- extern int ssb_gige_pcibios_plat_dev_init(struct ssb_device *sdev,
- 					  struct pci_dev *pdev);
- extern int ssb_gige_map_irq(struct ssb_device *sdev,
-@@ -174,6 +184,10 @@ static inline int ssb_gige_get_macaddr(s
- {
- 	return -ENODEV;
- }
-+static inline int ssb_gige_get_phyaddr(struct pci_dev *pdev)
-+{
-+	return -ENODEV;
-+}
- 
- #endif /* CONFIG_SSB_DRIVER_GIGE */
- #endif /* LINUX_SSB_DRIVER_GIGE_H_ */

@@ -28,6 +28,12 @@ mvebu_board_detect() {
 	*"PlatHome OpenBlocks AX3-4 board")
 		name="openblocks-ax3-4"
 		;;
+	*"Marvell Armada XP GP Board")
+		name="armada-xp-gp"
+		;;
+	*"Linksys WRT1900AC (Mamba)")
+		name="armada-xp-mamba"
+		;;
 	esac
 
 	[ -z "$name" ] && name="unknown"
@@ -44,6 +50,7 @@ mvebu_board_detect() {
 mvebu_board_name() {
 	local name
 
+	[ -f /tmp/sysinfo/board_name ] || mvebu_board_detect
 	[ -f /tmp/sysinfo/board_name ] && name=$(cat /tmp/sysinfo/board_name)
 	[ -z "$name" ] && name="unknown"
 

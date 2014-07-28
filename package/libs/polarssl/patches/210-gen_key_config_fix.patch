@@ -1,0 +1,40 @@
+Index: polarssl-1.3.7/programs/pkey/gen_key.c
+===================================================================
+--- polarssl-1.3.7.orig/programs/pkey/gen_key.c	2014-06-01 11:46:58.917399668 +0200
++++ polarssl-1.3.7/programs/pkey/gen_key.c	2014-06-01 11:48:18.653397400 +0200
+@@ -215,7 +215,9 @@
+ 
+     opt.type                = DFL_TYPE;
+     opt.rsa_keysize         = DFL_RSA_KEYSIZE;
++#if defined(POLARSSL_ECP_C)
+     opt.ec_curve            = DFL_EC_CURVE;
++#endif
+     opt.filename            = DFL_FILENAME;
+     opt.format              = DFL_FORMAT;
+     opt.use_dev_random      = DFL_USE_DEV_RANDOM;
+@@ -231,8 +233,10 @@
+         {
+             if( strcmp( q, "rsa" ) == 0 )
+                 opt.type = POLARSSL_PK_RSA;
++#if defined(POLARSSL_ECP_C)
+             else if( strcmp( q, "ec" ) == 0 )
+                 opt.type = POLARSSL_PK_ECKEY;
++#endif
+             else
+                 goto usage;
+         }
+@@ -251,12 +255,14 @@
+             if( opt.rsa_keysize < 1024 || opt.rsa_keysize > 8192 )
+                 goto usage;
+         }
++#if defined(POLARSSL_ECP_C)
+         else if( strcmp( p, "ec_curve" ) == 0 )
+         {
+             if( ( curve_info = ecp_curve_info_from_name( q ) ) == NULL )
+                 goto usage;
+             opt.ec_curve = curve_info->grp_id;
+         }
++#endif
+         else if( strcmp( p, "filename" ) == 0 )
+             opt.filename = q;
+         else if( strcmp( p, "use_dev_random" ) == 0 )

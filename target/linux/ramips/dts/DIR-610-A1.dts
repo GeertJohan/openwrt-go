@@ -53,7 +53,7 @@
 	};
 
 	ethernet@10100000 {
-		mtd-mac-address = <&factory 0x4004>;
+		mtd-mac-address = <&devdata 0x4004>;
 	};
 
 	esw@10110000 {
@@ -65,7 +65,7 @@
 	wmac@10180000 {
 		status = "okay";
 		ralink,led-polarity = <1>;
-		ralink,mtd-eeprom = <&devdata 16384>;
+		ralink,mtd-eeprom = <&devdata 0x4000>;
 	};
 
 	gpio-leds {

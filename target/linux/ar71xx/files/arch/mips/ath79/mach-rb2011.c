@@ -117,11 +117,25 @@ static struct ar8327_pad_cfg rb2011_ar8327_pad6_cfg;
 static struct ar8327_sgmii_cfg rb2011_ar8327_sgmii_cfg;
 
 static struct ar8327_led_cfg rb2011_ar8327_led_cfg = {
-	.led_ctrl0 = 0x0000c731,
+	.led_ctrl0 = 0xc731c731,
 	.led_ctrl1 = 0x00000000,
 	.led_ctrl2 = 0x00000000,
 	.led_ctrl3 = 0x0030c300,
 	.open_drain = false,
+};
+
+static const struct ar8327_led_info rb2011_ar8327_leds[] __initconst = {
+	AR8327_LED_INFO(PHY0_0, HW, "rb:green:eth1"),
+	AR8327_LED_INFO(PHY1_0, HW, "rb:green:eth2"),
+	AR8327_LED_INFO(PHY2_0, HW, "rb:green:eth3"),
+	AR8327_LED_INFO(PHY3_0, HW, "rb:green:eth4"),
+	AR8327_LED_INFO(PHY4_0, HW, "rb:green:eth5"),
+	AR8327_LED_INFO(PHY0_1, SW, "rb:green:eth6"),
+	AR8327_LED_INFO(PHY1_1, SW, "rb:green:eth7"),
+	AR8327_LED_INFO(PHY2_1, SW, "rb:green:eth8"),
+	AR8327_LED_INFO(PHY3_1, SW, "rb:green:eth9"),
+	AR8327_LED_INFO(PHY4_1, SW, "rb:green:eth10"),
+	AR8327_LED_INFO(PHY4_2, SW, "rb:green:usr"),
 };
 
 static struct ar8327_platform_data rb2011_ar8327_data = {
@@ -134,6 +148,8 @@ static struct ar8327_platform_data rb2011_ar8327_data = {
 		.rxpause = 1,
 	},
 	.led_cfg = &rb2011_ar8327_led_cfg,
+	.num_leds = ARRAY_SIZE(rb2011_ar8327_leds),
+	.leds = rb2011_ar8327_leds,
 };
 
 static struct mdio_board_info rb2011_mdio0_info[] = {

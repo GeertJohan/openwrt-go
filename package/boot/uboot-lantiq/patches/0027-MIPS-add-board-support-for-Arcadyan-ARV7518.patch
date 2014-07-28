@@ -1,6 +1,6 @@
-From 289f7ed5d725067b4eb4b1a105bb63d55bf20392 Mon Sep 17 00:00:00 2001
+From 54a31b334162e8dc2ea891057ddeab42978db8b3 Mon Sep 17 00:00:00 2001
 From: Luka Perkov <luka@openwrt.org>
-Date: Wed, 29 Aug 2012 22:08:41 +0200
+Date: Sat, 2 Mar 2013 23:34:00 +0100
 Subject: MIPS: add board support for Arcadyan ARV7518
 
 Signed-off-by: Luka Perkov <luka@openwrt.org>
@@ -8,13 +8,11 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
 --- /dev/null
 +++ b/board/arcadyan/arv7518pw/Makefile
-@@ -0,0 +1,29 @@
-+#
-+# This file is released under the terms of GPL v2 and any later version.
-+# See the file COPYING in the root directory of the source tree for details.
+@@ -0,0 +1,27 @@
 +#
 +# Copyright (C) 2000-2011 Wolfgang Denk, DENX Software Engineering, wd@denx.de
-+# Copyright (C) 2011 Daniel Schwierzeck, daniel.schwierzeck@googlemail.com
++#
++# SPDX-License-Identifier:	GPL-2.0+
 +#
 +
 +include $(TOPDIR)/config.mk
@@ -40,12 +38,11 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +#########################################################################
 --- /dev/null
 +++ b/board/arcadyan/arv7518pw/arv7518pw.c
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,51 @@
 +/*
-+ * This file is released under the terms of GPL v2 and any later version.
-+ * See the file COPYING in the root directory of the source tree for details.
-+ *
 + * Copyright (C) 2012 Luka Perkov <luka@openwrt.org>
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
 + */
 +
 +#include <common.h>
@@ -95,25 +92,23 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +}
 --- /dev/null
 +++ b/board/arcadyan/arv7518pw/config.mk
-@@ -0,0 +1,8 @@
+@@ -0,0 +1,7 @@
 +#
-+# This file is released under the terms of GPL v2 and any later version.
-+# See the file COPYING in the root directory of the source tree for details.
++# Copyright (C) 2011-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
 +#
-+# Copyright (C) 2011 Daniel Schwierzeck, daniel.schwierzeck@googlemail.com
++# SPDX-License-Identifier:	GPL-2.0+
 +#
 +
 +PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(BOARDDIR)
 --- /dev/null
 +++ b/board/arcadyan/arv7518pw/ddr_settings.h
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,55 @@
 +/*
-+ * This file is released under the terms of GPL v2 and any later version.
-+ * See the file COPYING in the root directory of the source tree for details.
++ * Copyright (C) 2012-2013 Luka Perkov <luka@openwrt.org>
 + *
-+ * generated with lantiq_ram_extract_magic.awk
++ * This file has been generated with lantiq_ram_extract_magic.awk script.
 + *
-+ * Copyright (C) 2012 Luka Perkov <luka@openwrt.org>
++ * SPDX-License-Identifier:	GPL-2.0+
 + */
 +
 +#define MC_DC00_VALUE	0x1B1B
@@ -165,23 +160,23 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +#define MC_DC46_VALUE	0x0
 --- a/boards.cfg
 +++ b/boards.cfg
-@@ -438,6 +438,8 @@ vct_premium                  mips
- vct_premium_onenand          mips        mips32      vct                 micronas       -           vct:VCT_PREMIUM,VCT_ONENAND
- vct_premium_onenand_small    mips        mips32      vct                 micronas       -           vct:VCT_PREMIUM,VCT_ONENAND,VCT_SMALL_IMAGE
- vct_premium_small            mips        mips32      vct                 micronas       -           vct:VCT_PREMIUM,VCT_SMALL_IMAGE
-+arv7518pw_ram                mips        mips32      arv7518pw           arcadyan       danube      arv7518pw:SYS_BOOT_RAM
-+arv7518pw_nor                mips        mips32      arv7518pw           arcadyan       danube      arv7518pw:SYS_BOOT_NOR
- dbau1000                     mips        mips32      dbau1x00            -              au1x00      dbau1x00:DBAU1000
- dbau1100                     mips        mips32      dbau1x00            -              au1x00      dbau1x00:DBAU1100
- dbau1500                     mips        mips32      dbau1x00            -              au1x00      dbau1x00:DBAU1500
+@@ -505,6 +505,9 @@ Active  mips        mips32         au1x0
+ Active  mips        mips32         danube      arcadyan        arv4519pw           arv4519pw_brn                        arv4519pw:SYS_BOOT_BRN                                                                                                            Luka Perkov <luka@openwrt.org>
+ Active  mips        mips32         danube      arcadyan        arv4519pw           arv4519pw_nor                        arv4519pw:SYS_BOOT_NOR                                                                                                            Luka Perkov <luka@openwrt.org>
+ Active  mips        mips32         danube      arcadyan        arv4519pw           arv4519pw_ram                        arv4519pw:SYS_BOOT_RAM                                                                                                            Luka Perkov <luka@openwrt.org>
++Active  mips        mips32         danube      arcadyan        arv7518pw           arv7518pw_brn                        arv7518pw:SYS_BOOT_BRN                                                                                                            Luka Perkov <luka@openwrt.org>
++Active  mips        mips32         danube      arcadyan        arv7518pw           arv7518pw_nor                        arv7518pw:SYS_BOOT_NOR                                                                                                            Luka Perkov <luka@openwrt.org>
++Active  mips        mips32         danube      arcadyan        arv7518pw           arv7518pw_ram                        arv7518pw:SYS_BOOT_RAM                                                                                                            Luka Perkov <luka@openwrt.org>
+ Active  mips        mips32         danube      lantiq          easy50712           easy50712_nor                        easy50712:SYS_BOOT_NOR                                                                                                            Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+ Active  mips        mips32         danube      lantiq          easy50712           easy50712_norspl                     easy50712:SYS_BOOT_NORSPL                                                                                                         Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+ Active  mips        mips32         danube      lantiq          easy50712           easy50712_ram                        easy50712:SYS_BOOT_RAM                                                                                                            Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 --- /dev/null
 +++ b/include/configs/arv7518pw.h
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,67 @@
 +/*
-+ * This file is released under the terms of GPL v2 and any later version.
-+ * See the file COPYING in the root directory of the source tree for details.
++ * Copyright (C) 2012-2013 Luka Perkov <luka@openwrt.org>
 + *
-+ * Copyright (C) 2012 Luka Perkov <luka@openwrt.org>
++ * SPDX-License-Identifier:	GPL-2.0+
 + */
 +
 +#ifndef __CONFIG_H
@@ -193,7 +188,9 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +
 +/* Configure SoC */
 +#define CONFIG_LTQ_SUPPORT_UART		/* Enable ASC and UART */
++
 +#define CONFIG_LTQ_SUPPORT_ETHERNET	/* Enable ethernet */
++
 +#define CONFIG_LTQ_SUPPORT_NOR_FLASH	/* Have a parallel NOR flash */
 +
 +/* Switch devices */
@@ -205,14 +202,21 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +#define CONFIG_ENV_IS_IN_FLASH
 +#define CONFIG_ENV_OVERWRITE
 +#define CONFIG_ENV_OFFSET		(192 * 1024)
-+#define CONFIG_ENV_SIZE			(64 * 1024)
 +#define CONFIG_ENV_SECT_SIZE		(64 * 1024)
 +#else
 +#define CONFIG_ENV_IS_NOWHERE
-+#define CONFIG_ENV_SIZE			(2 * 1024)
 +#endif
 +
++#define CONFIG_ENV_SIZE			(8 * 1024)
 +#define CONFIG_LOADADDR			CONFIG_SYS_LOAD_ADDR
++
++/* Brnboot loadable image */
++#if defined(CONFIG_SYS_BOOT_BRN)
++#define CONFIG_SYS_TEXT_BASE		0x80002000
++#define CONFIG_SKIP_LOWLEVEL_INIT
++#define CONFIG_SYS_DISABLE_CACHE
++#define CONFIG_ENV_OVERWRITE 1
++#endif
 +
 +/* Console */
 +#define CONFIG_LTQ_ADVANCED_CONSOLE
@@ -220,29 +224,19 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +#define CONFIG_CONSOLE_ASC		1
 +#define CONFIG_CONSOLE_DEV		"ttyLTQ1"
 +
-+/* Commands */
-+#define CONFIG_CMD_PING
-+
 +/* Pull in default board configs for Lantiq XWAY Danube */
 +#include <asm/lantiq/config.h>
 +#include <asm/arch/config.h>
 +
-+/* Compression */
-+#define CONFIG_LZMA
-+
-+/* Auto boot */
-+#define CONFIG_BOOTDELAY		2
-+
-+/* Environment configuration */
-+#define CONFIG_BOOTCOMMAND			\
-+	"run addeth; bootm ${kernel_addr}"
++/* Pull in default OpenWrt configs for Lantiq SoC */
++#include "openwrt-lantiq-common.h"
 +
 +#define CONFIG_ENV_UPDATE_UBOOT_NOR		\
 +	"update-uboot-nor=run load-uboot-nor write-uboot-nor\0"
 +
-+#define CONFIG_EXTRA_ENV_SETTINGS		\
-+	CONFIG_ENV_LANTIQ_DEFAULTS		\
-+	CONFIG_ENV_UPDATE_UBOOT_NOR		\
++#define CONFIG_EXTRA_ENV_SETTINGS	\
++	CONFIG_ENV_LANTIQ_DEFAULTS	\
++	CONFIG_ENV_UPDATE_UBOOT_NOR	\
 +	"kernel_addr=0xB0040000\0"
 +
 +#endif /* __CONFIG_H */

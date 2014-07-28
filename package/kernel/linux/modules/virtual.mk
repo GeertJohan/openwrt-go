@@ -54,10 +54,27 @@ endef
 
 $(eval $(call KernelPackage,virtio-random))
 
+
+define KernelPackage/xen-privcmd
+  SUBMENU:=$(VIRTUAL_MENU)
+  TITLE:=Xen private commands
+  DEPENDS:=@TARGET_x86_xen_domu
+  KCONFIG:=CONFIG_XEN_PRIVCMD
+  FILES:=$(LINUX_DIR)/drivers/xen/xen-privcmd.ko
+  AUTOLOAD:=$(call AutoLoad,04,xen-privcmd)
+endef
+
+define KernelPackage/xen-privcmd/description
+ Kernel module for Xen private commands
+endef
+
+$(eval $(call KernelPackage,xen-privcmd))
+
+
 define KernelPackage/xen-fs
   SUBMENU:=$(VIRTUAL_MENU)
   TITLE:=Xen filesystem
-  DEPENDS:=@TARGET_x86_xen_domu
+  DEPENDS:=@TARGET_x86_xen_domu +kmod-xen-privcmd
   KCONFIG:= \
   	CONFIG_XENFS \
   	CONFIG_XEN_COMPAT_XENFS=y
@@ -125,9 +142,10 @@ $(eval $(call KernelPackage,xen-fbdev))
 define KernelPackage/xen-kbddev
   SUBMENU:=$(VIRTUAL_MENU)
   TITLE:=Xen virtual keyboard and mouse
-  DEPENDS:=@TARGET_x86_xen_domu
-  KCONFIG:=CONFIG_XEN_KBDDEV_FRONTEND
-  FILES:=$(LINUX_DIR)/drivers/input/xen-kbdfront.ko
+  DEPENDS:=@TARGET_x86_xen_domu +kmod-input-core
+  KCONFIG:=CONFIG_INPUT_MISC=y \
+	CONFIG_INPUT_XEN_KBDDEV_FRONTEND
+  FILES:=$(LINUX_DIR)/drivers/input/misc/xen-kbdfront.ko
   AUTOLOAD:=$(call AutoLoad,08,xen-kbdfront)
 endef
 

@@ -1,7 +1,8 @@
 #!/bin/sh /etc/rc.common
 # Copyright (C) 2012 OpenWrt.org
 
-START=99
+# needs to start before the atm layer which starts at 50
+START=48
 
 EXTRA_COMMANDS="status lucistat"
 EXTRA_HELP="	status  Get DSL status information
@@ -10,297 +11,177 @@ EXTRA_HELP="	status  Get DSL status information
 SERVICE_DAEMONIZE=1
 SERVICE_WRITE_PID=1
 
-#
-# Basic functions to send CLI commands to the vdsl_cpe_control daemon
-#
-dsl_cmd() {
-	killall -0 vdsl_cpe_control && (
-		echo "$@" > /tmp/pipe/dsl_cpe0_cmd
-		cat /tmp/pipe/dsl_cpe0_ack
-	)
-}
-dsl_val() {
-	echo $(expr "$1" : '.*'$2'=\([-\.[:alnum:]]*\).*')
-}
+[ -f /lib/functions/lantiq_dsl.sh ] && . /lib/functions/lantiq_dsl.sh
+XDSL_CTRL=vdsl_cpe_control
 
-#
-# Simple divide by 10 routine to cope with one decimal place
-#
-dbt() {
-	local a=$(expr $1 / 10)
-	local b=$(expr $1 % 10)
-	echo "${a}.${b}"
-}
-#
-# Take a number and convert to k or meg
-#
-scale() {
-	local val=$1
-	local a
-	local b
+# G.992.1 Annex A
+# G.992.2 Annex A
+# G.992.3 Annex A
+# G.992.4 Annex A
+# G.992.5 Annex A
+# G.993.2 Annex A/B/C
+xtse_adsl_a="04 01 04 01 00 01 00 00"
 
-	if [ "$val" -gt 1000000 ]; then
-		a=$(expr $val / 1000)
-		b=$(expr $a % 1000)
-		a=$(expr $a / 1000)
-		printf "%d.%03d Mb" ${a} ${b}
-	elif [ "$val" -gt 1000 ]; then
-		a=$(expr $val / 1000)
-		printf "%d Kb" ${a}
-	else
-		echo "${val} b"
-	fi
+# G.992.1 Annex B
+# G.992.3 Annex B
+# G.992.5 Annex B
+# G.993.2 Annex A/B/C
+xtse_adsl_b="10 00 10 00 00 04 00 00"
+
+# G.992.1 Annex B
+# G.992.3 Annex B
+# G.992.3 Annex J
+# G.992.5 Annex B
+# G.992.5 Annex J
+# G.993.2 Annex A/B/C
+xtse_adsl_j="10 00 10 40 00 04 01 00"
+
+xtse_vdsl="00 00 00 00 00 00 00 07"
+
+xdsl_scr() {
+	val=`echo $2 | sed "s/ / 0x/g"`
+	echo "[WaitForConfiguration]={
+#G997XTUSEC_g997xtusecs 0x$val
 }
 
-#
-# Read the data rates for both directions
-#
-data_rates() {
-	local csg
-	local dru
-	local drd
-	local sdru
-	local sdrd
-
-	csg=$(dsl_cmd g997csg 0 1)
-	drd=$(dsl_val "$csg" ActualDataRate)
-
-	csg=$(dsl_cmd g997csg 0 0)
-	dru=$(dsl_val "$csg" ActualDataRate)
-
-	[ -z "$drd" ] && drd=0
-	[ -z "$dru" ] && dru=0
-
-	sdrd=$(scale $drd)
-	sdru=$(scale $dru)
-
-	if [ "$action" = "lucistat" ]; then
-		echo "dsl.data_rate_down=$drd"
-		echo "dsl.data_rate_up=$dru"
-		echo "dsl.data_rate_down_s=\"$sdrd\""
-		echo "dsl.data_rate_up_s=\"$sdru\""
-	else
-		echo "Data Rate:		${sdrd}/s / ${sdru}/s"
-	fi
+[WaitForLinkActivate]={
 }
 
-#
-# Chipset
-#
-chipset() {
-	local vig
-	local cs
-	local csv
-
-	vig=$(dsl_cmd vig)
-	cs=$(dsl_val "$vig" DSL_ChipSetType)
-	csv=$(dsl_val "$vig" DSL_ChipSetHWVersion)
-
-	if [ "$action" = "lucistat" ]; then
-		echo "dsl.chipset=\"${cs} ${csv}\""
-	else
-		echo "Chipset:		${cs} ${csv}"
-	fi
+[WaitForRestart]={
 }
 
-#
-# Work out how long the line has been up
-#
-line_uptime() {
-	local ccsg
-	local et
-	local etr
-	local d
-	local h
-	local m
-	local s
-	local rc=""
-
-	ccsg=$(dsl_cmd pmccsg 0 0 0)
-	et=$(dsl_val "$ccsg" nElapsedTime)
-
-	[ -z "$et" ] && et=0
-
-	if [ "$action" = "lucistat" ]; then
-		echo "dsl.line_uptime=${et}"
-		return
-	fi
-
-	d=$(expr $et / 86400)
-	etr=$(expr $et % 86400)
-	h=$(expr $etr / 3600)
-	etr=$(expr $etr % 3600)
-	m=$(expr $etr / 60)
-	s=$(expr $etr % 60)
-
-
-	[ "${d}${h}${m}${s}" -ne 0 ] && rc="${s}s"
-	[ "${d}${h}${m}" -ne 0 ] && rc="${m}m ${rc}"
-	[ "${d}${h}" -ne 0 ] && rc="${h}h ${rc}"
-	[ "${d}" -ne 0 ] && rc="${d}d ${rc}"
-
-	[ -z "$rc" ] && rc="down"
-	echo "Line Uptime:		${rc}"
+[Common]={
+}" > /tmp/$1.scr
 }
 
+# A43
+tone_adsl_a="0x142"
+tone_vdsl_a="0x142"
+
+# A43 + V43
+tone_adsl_av="0x142"
+tone_vdsl_av="0x146"
+
+# B43
+tone_adsl_b="0x1"
+tone_vdsl_b="0x1"
+
+# B43 + V43
+tone_adsl_bv="0x1"
+tone_vdsl_bv="0x5"
+
+lowlevel_cfg() {
+	echo "# VRX Low Level Configuration File
 #
-# Get noise and attenuation figures
+# Parameters must be separated by tabs or spaces.
+# Empty lines and comments will be ignored.
 #
-line_data() {
-	local lsg
-	local latnu
-	local latnd
-	local snru
-	local snrd
 
-	lsg=$(dsl_cmd g997lsg 1 1)
-	latnd=$(dsl_val "$lsg" LATN)
-	snrd=$(dsl_val "$lsg" SNR)
+# nFilter
+#
+# NA     = -1
+# OFF    = 0
+# ISDN   = 1
+# POTS   = 2
+# POTS_2 = 3
+# POTS_3 = 4
+#
+#  (dec)
+    -1
 
-	lsg=$(dsl_cmd g997lsg 0 1)
-	latnu=$(dsl_val "$lsg" LATN)
-	snru=$(dsl_val "$lsg" SNR)
+# nHsToneGroupMode nHsToneGroup_A       nHsToneGroup_V    nHsToneGroup_AV
+#
+# NA     = -1      NA         = -1      see               see
+# AUTO   = 0       VDSL2_B43  = 0x0001  nHsToneGroup_A    nHsToneGroup_A
+# MANUAL = 1       VDSL2_A43  = 0x0002
+#                  VDSL2_V43  = 0x0004
+#                  VDSL1_V43P = 0x0008
+#                  VDSL1_V43I = 0x0010
+#                  ADSL1_C43  = 0x0020
+#                  ADSL2_J43  = 0x0040
+#                  ADSL2_B43C = 0x0080
+#                  ADSL2_A43C = 0x0100
+#
+#  (dec)           (hex)                (hex)             (hex)
+     1             $1			$2		 0x0
 
-	[ -z "$latnd" ] && latnd=0
-	[ -z "$latnu" ] && latnu=0
-	[ -z "$snrd" ] && snrd=0
-	[ -z "$snru" ] && snru=0
+#   nBaseAddr     nIrqNum
+#
+#     (hex)        (dec)
+    0x1e116000      63
 
-	latnd=$(dbt $latnd)
-	latnu=$(dbt $latnu)
-	snrd=$(dbt $snrd)
-	snru=$(dbt $snru)
-	
-	if [ "$action" = "lucistat" ]; then
-		echo "dsl.line_attenuation_down=$latnd"
-		echo "dsl.line_attenuation_up=$latnu"
-		echo "dsl.noise_margin_down=$snrd"
-		echo "dsl.noise_margin_up=$snru"
-	else
-		echo "Line Attenuation:	${latnd}dB / ${latnu}dB"
-		echo "Noise Margin:		${snrd}dB / ${snru}dB"
-	fi
+# nUtopiaPhyAdr   nUtopiaBusWidth      nPosPhyParity
+#                 default(16b) = 0     NA   = -1
+#                 8-bit        = 1     ODD  = 0
+#                 16-bit       = 2
+#
+#
+#    (hex)            (dec)                (dec)
+      0xFF              0                    0
+
+# bNtrEnable
+#
+#  (dec)
+    0" > /tmp/lowlevel.cfg
 }
 
-#
-# Is the line up? Or what state is it in?
-#
-line_state() {
-	local lsg=$(dsl_cmd lsg)
-	local ls=$(dsl_val "$lsg" nLineState);
-	local s;
-
-	case "$ls" in
-		"0x0")		s="not initialized" ;;
-		"0x1")		s="exception" ;;
-		"0x10")		s="not updated" ;;
-		"0xff")		s="idle request" ;;
-		"0x100")	s="idle" ;;
-		"0x1ff")	s="silent request" ;;
-		"0x200")	s="silent" ;;
-		"0x300")	s="handshake" ;;
-		"0x380")	s="full_init" ;;
-		"0x400")	s="discovery" ;;
-		"0x500")	s="training" ;;
-		"0x600")	s="analysis" ;;
-		"0x700")	s="exchange" ;;
-		"0x800")	s="showtime_no_sync" ;;
-		"0x801")	s="showtime_tc_sync" ;;
-		"0x900")	s="fastretrain" ;;
-		"0xa00")	s="lowpower_l2" ;;
-		"0xb00")	s="loopdiagnostic active" ;;
-		"0xb10")	s="loopdiagnostic data exchange" ;;
-		"0xb20")	s="loopdiagnostic data request" ;;
-		"0xc00")	s="loopdiagnostic complete" ;;
-		"0x1000000")	s="test" ;;
-		"0xd00")	s="resync" ;;
-		"0x3c0")	s="short init entry" ;;
-		"")		s="not running daemon"; ls="0xfff" ;;
-		*)		s="unknown" ;;
-	esac
-
-	if [ $action = "lucistat" ]; then
-		echo "dsl.line_state_num=$ls"
-		echo "dsl.line_state_detail=\"$s\""
-		if [ "$ls" = "0x801" ]; then
-			echo "dsl.line_state=\"UP\""
-		else
-			echo "dsl.line_state=\"DOWN\""
-		fi
-	else
-		if [ "$ls" = "0x801" ]; then
-			echo "Line State:		UP [$ls: $s]"
-		else
-			echo "Line State:		DOWN [$ls: $s]"
-		fi
-	fi
-}
-
-#
-# Main status routine
-#
-status() {
-	chipset
-	line_state
-	data_rates
-	line_data
-	line_uptime
-}
-
-#
-# Luci (lua) compatible version that's easy to parse
-#
-lucistat() {
-	echo "local dsl={}"
-	status
-	echo "return dsl"
-}
-
-
-annex_b=10_00_10_00_00_04_00_00
-annex_bdmt=10_00_00_00_00_00_00_00
-annex_b2=00_00_10_00_00_00_00_00
-annex_b2p=00_00_00_00_00_04_00_00
-annex_a=04_01_04_00_00_01_00_00
-annex_at1=01_00_00_00_00_00_00_00
-annex_alite=00_01_00_00_00_00_00_00
-annex_admt=04_00_00_00_00_00_00_00
-annex_a2=00_00_04_00_00_00_00_00
-annex_a2p=00_00_00_00_00_01_00_00
-annex_l=00_00_00_00_04_00_00_00
-annex_m=00_00_00_00_40_00_04_00
-annex_m2=00_00_00_00_40_00_00_00
-annex_m2p=00_00_00_00_00_00_04_00
-
-#
-# Simple start routine
-#
 start() {
 	local annex
 	local firmware
-	local xtu
+	local tone
+	local tone_adsl
+	local tone_vdsl
+	local xtse_adsl
+	local mode
+
 	config_load network
-	config_get annex wan annex
-	config_get firmware wan firmware
+	config_get tone dsl tone
+	config_get annex dsl annex
+	config_get firmware dsl firmware
+	config_get xfer_mode dsl xfer_mode
 
-	# get xtu
-	eval "xtu=\"\${annex_$annex}\""
+	[ -z "${xfer_mode}" ] && xfer_mode=ptm
 
-	# check for firmware
-	[ -z "${firmware}" ] &&
-		firmware=vdsl.bin
+	case "${xfer_mode}" in
+	atm)
+		insmod ltq_atm_vr9
+		mode=1
+		;;
+	*)
+		insmod ltq_ptm_vr9
+		mode=2
+		;;
+	esac
 
-	# start CPE dsl daemon in the background
-	service_start /sbin/vdsl_cpe_control -i${xtu} \
+	eval "xtse_adsl=\"\${xtse_adsl_$annex}\""
+	[ -z "${xtse_adsl}" ] && xtse_adsl=$xtse_adsl_a
+
+	eval "tone_adsl=\"\${tone_adsl_$tone}\""
+	[ -z "${tone_adsl}" ] && tone_adsl=$tone_adsl_av
+
+	eval "tone_vdsl=\"\${tone_vdsl_$tone}\""
+	[ -z "${tone_vdsl}" ] && tone_vdsl=$tone_vdsl_av
+		
+	[ -z "${firmware}" ] && firmware=/lib/firmware/vdsl.bin
+	[ -f "${firmware}" ] || {
+		echo failed to find $firmware
+		return 1
+	}
+
+	xdsl_scr adsl "${xtse_adsl}"
+	xdsl_scr vdsl "${xtse_vdsl}"
+	lowlevel_cfg "${tone_adsl}" "${tone_vdsl}"
+
+	service_start /sbin/vdsl_cpe_control \
+			-i `echo $xtse_adsl | sed "s/ /_/g"` \
 			-n /sbin/dsl_notify.sh \
-			-f /lib/firmware/${firmware}
+			-f ${firmware} \
+			-a /tmp/adsl.scr \
+			-A /tmp/vdsl.scr \
+			-l /tmp/lowlevel.cfg \
+			-M ${mode}
 }
 
-#
-# For stop we want to simulate the notification call for when
-# the line goes down, so that we can stop the ppp link before
-# we die.
-#
 stop() {
 	DSL_NOTIFICATION_TYPE="DSL_INTERFACE_STATUS" \
 	DSL_INTERFACE_STATUS="DOWN" \
@@ -308,4 +189,3 @@ stop() {
 
 	service_stop /sbin/vdsl_cpe_control
 }
-

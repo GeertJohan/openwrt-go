@@ -34,7 +34,7 @@
  #define IF_GET_IFACE	0x0001		/* for querying only */
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -1874,6 +1874,10 @@ static inline int pskb_trim(struct sk_bu
+@@ -1879,6 +1879,10 @@ static inline int pskb_trim(struct sk_bu
  	return (len < skb->len) ? __pskb_trim(skb, len) : 0;
  }
  
@@ -45,7 +45,7 @@
  /**
   *	pskb_trim_unique - remove end from a paged unique (not cloned) buffer
   *	@skb: buffer to alter
-@@ -1998,16 +2002,6 @@ static inline struct sk_buff *dev_alloc_
+@@ -2003,16 +2007,6 @@ static inline struct sk_buff *dev_alloc_
  }
  
  
@@ -79,7 +79,7 @@
  	help
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -2576,9 +2576,19 @@ int dev_hard_start_xmit(struct sk_buff *
+@@ -2581,9 +2581,19 @@ int dev_hard_start_xmit(struct sk_buff *
  		if (!list_empty(&ptype_all))
  			dev_queue_xmit_nit(skb, dev);
  
@@ -102,7 +102,7 @@
  		if (rc == NETDEV_TX_OK)
  			txq_trans_update(txq);
  		return rc;
-@@ -2594,9 +2604,19 @@ gso:
+@@ -2599,9 +2609,19 @@ gso:
  		if (!list_empty(&ptype_all))
  			dev_queue_xmit_nit(nskb, dev);
  
@@ -127,7 +127,7 @@
  				goto out_kfree_gso_skb;
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
-@@ -60,6 +60,7 @@
+@@ -62,6 +62,7 @@
  #include <linux/scatterlist.h>
  #include <linux/errqueue.h>
  #include <linux/prefetch.h>
@@ -135,7 +135,7 @@
  
  #include <net/protocol.h>
  #include <net/dst.h>
-@@ -471,6 +472,22 @@ struct sk_buff *__netdev_alloc_skb(struc
+@@ -443,6 +444,22 @@ struct sk_buff *__netdev_alloc_skb(struc
  }
  EXPORT_SYMBOL(__netdev_alloc_skb);
  

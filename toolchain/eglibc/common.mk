@@ -18,11 +18,8 @@ PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.bz2
 ifneq ($(CONFIG_EGLIBC_VERSION_2_15),)
   PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_15
 endif
-ifneq ($(CONFIG_EGLIBC_VERSION_2_16),)
-  PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_16
-endif
-ifneq ($(CONFIG_EGLIBC_VERSION_2_17),)
-  PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_17
+ifneq ($(CONFIG_EGLIBC_VERSION_2_19),)
+  PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_19
 endif
 
 PATCH_DIR:=$(PATH_PREFIX)/patches/$(PKG_VERSION)
@@ -37,6 +34,17 @@ HOST_STAMP_CONFIGURED:=$(CUR_BUILD_DIR)/.configured
 HOST_STAMP_BUILT:=$(CUR_BUILD_DIR)/.built
 HOST_STAMP_INSTALLED:=$(TOOLCHAIN_DIR)/stamp/.eglibc_$(VARIANT)_installed
 
+ifeq ($(ARCH),mips64)
+  ifdef CONFIG_MIPS64_ABI_N64
+    TARGET_CFLAGS += -mabi=64
+  endif
+  ifdef CONFIG_MIPS64_ABI_N32
+    TARGET_CFLAGS += -mabi=n32
+  endif
+  ifdef CONFIG_MIPS64_ABI_O32
+    TARGET_CFLAGS += -mabi=32
+  endif
+endif
 
 EGLIBC_CONFIGURE:= \
 	BUILD_CC="$(HOSTCC)" \
@@ -83,7 +91,7 @@ define Host/Prepare
 	$(call Host/Prepare/Default)
 	ln -snf $(PKG_SOURCE_SUBDIR) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
 	$(SED) 's,y,n,' $(HOST_BUILD_DIR)/libc/option-groups.defaults
-ifneq ($(CONFIG_EGLIBC_VERSION_2_17),y)
+ifneq ($(CONFIG_EGLIBC_VERSION_2_15),)
 	ln -sf ../ports $(HOST_BUILD_DIR)/libc/
 endif
 endef

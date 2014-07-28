@@ -1,7 +1,9 @@
 /*
- * TP-LINK Archer C7 board support
+ * TP-LINK Archer C5/C7/TL-WDR4900 v2 board support
  *
  * Copyright (c) 2013 Gabor Juhos <juhosg@openwrt.org>
+ * Copyright (c) 2014 施康成 <tenninjas@tenninjas.ca>
+ * Copyright (c) 2014 Imre Kaloz <kaloz@openwrt.org>
  *
  * Based on the Qualcomm Atheros AP135/AP136 reference board support code
  *   Copyright (c) 2012 Qualcomm Atheros
@@ -24,12 +26,13 @@
 #include <linux/phy.h>
 #include <linux/gpio.h>
 #include <linux/platform_device.h>
-//#include <linux/ath9k_platform.h>
+#include <linux/ath9k_platform.h>
 #include <linux/ar8216_platform.h>
 
 #include <asm/mach-ath79/ar71xx_regs.h>
 
 #include "common.h"
+#include "dev-ap9x-pci.h"
 #include "dev-eth.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
@@ -57,6 +60,7 @@
 #define ARCHER_C7_KEYS_DEBOUNCE_INTERVAL (3 * ARCHER_C7_KEYS_POLL_INTERVAL)
 
 #define ARCHER_C7_WMAC_CALDATA_OFFSET	0x1000
+#define ARCHER_C7_PCIE_CALDATA_OFFSET	0x5000
 
 static const char *archer_c7_part_probes[] = {
 	"tp-link",
@@ -118,6 +122,14 @@ static struct gpio_keys_button archer_c7_gpio_keys[] __initdata = {
 	},
 };
 
+static const struct ar8327_led_info archer_c7_leds_ar8327[] __initconst = {
+	AR8327_LED_INFO(PHY0_0, HW, "tp-link:blue:wan"),
+	AR8327_LED_INFO(PHY1_0, HW, "tp-link:blue:lan1"),
+	AR8327_LED_INFO(PHY2_0, HW, "tp-link:blue:lan2"),
+	AR8327_LED_INFO(PHY3_0, HW, "tp-link:blue:lan3"),
+	AR8327_LED_INFO(PHY4_0, HW, "tp-link:blue:lan4"),
+};
+
 /* GMAC0 of the AR8327 switch is connected to the QCA9558 SoC via SGMII */
 static struct ar8327_pad_cfg archer_c7_ar8327_pad0_cfg = {
 	.mode = AR8327_PAD_MAC_SGMII,
@@ -159,6 +171,8 @@ static struct ar8327_platform_data archer_c7_ar8327_data = {
 		.rxpause = 1,
 	},
 	.led_cfg = &archer_c7_ar8327_led_cfg,
+	.num_leds = ARRAY_SIZE(archer_c7_leds_ar8327),
+	.leds = archer_c7_leds_ar8327,
 };
 
 static struct mdio_board_info archer_c7_mdio0_info[] = {
@@ -169,24 +183,7 @@ static struct mdio_board_info archer_c7_mdio0_info[] = {
 	},
 };
 
-static void __init archer_c7_gmac_setup(void)
-{
-	void __iomem *base;
-	u32 t;
-
-	base = ioremap(QCA955X_GMAC_BASE, QCA955X_GMAC_SIZE);
-
-	t = __raw_readl(base + QCA955X_GMAC_REG_ETH_CFG);
-
-	t &= ~(QCA955X_ETH_CFG_RGMII_EN | QCA955X_ETH_CFG_GE0_SGMII);
-	t |= QCA955X_ETH_CFG_RGMII_EN;
-
-	__raw_writel(t, base + QCA955X_GMAC_REG_ETH_CFG);
-
-	iounmap(base);
-}
-
-static void __init archer_c7_setup(void)
+static void __init common_setup(bool pcie_slot)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
@@ -202,13 +199,19 @@ static void __init archer_c7_setup(void)
 	ath79_init_mac(tmpmac, mac, -1);
 	ath79_register_wmac(art + ARCHER_C7_WMAC_CALDATA_OFFSET, tmpmac);
 
-	ath79_register_pci();
+	if (pcie_slot) {
+		ath79_register_pci();
+	} else {
+		ath79_init_mac(tmpmac, mac, -1);
+		ap9x_pci_setup_wmac_led_pin(0, 0);
+		ap91_pci_init(art + ARCHER_C7_PCIE_CALDATA_OFFSET, tmpmac);
+	}
 
 	mdiobus_register_board_info(archer_c7_mdio0_info,
 				    ARRAY_SIZE(archer_c7_mdio0_info));
 	ath79_register_mdio(0, 0x0);
 
-	archer_c7_gmac_setup();
+	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
 
 	/* GMAC0 is connected to the RMGII interface */
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
@@ -237,5 +240,27 @@ static void __init archer_c7_setup(void)
 	ath79_register_usb();
 }
 
+static void __init archer_c5_setup(void)
+{
+	common_setup(true);
+}
+
+MIPS_MACHINE(ATH79_MACH_ARCHER_C5, "ARCHER-C5", "TP-LINK Archer C5",
+	     archer_c5_setup);
+
+static void __init archer_c7_setup(void)
+{
+	common_setup(true);
+}
+
 MIPS_MACHINE(ATH79_MACH_ARCHER_C7, "ARCHER-C7", "TP-LINK Archer C7",
 	     archer_c7_setup);
+
+static void __init tl_wdr4900_v2_setup(void)
+{
+	common_setup(false);
+}
+
+MIPS_MACHINE(ATH79_MACH_TL_WDR4900_V2, "TL-WDR4900-v2", "TP-LINK TL-WDR4900 v2",
+	     tl_wdr4900_v2_setup)
+
