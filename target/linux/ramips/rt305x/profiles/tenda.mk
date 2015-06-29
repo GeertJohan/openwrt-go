@@ -5,10 +5,23 @@
 # See /LICENSE for more information.
 #
 
+define Profile/3G150B
+	NAME:=Tenda 3G150B
+	PACKAGES:=\
+		kmod-usb-core kmod-usb-dwc2 \
+		kmod-ledtrig-usbdev
+endef
+
+define Profile/3G150B/Description
+	Package set for Tenda 3G150B board
+endef
+
+$(eval $(call Profile,3G150B))
+
 define Profile/3G300M
 	NAME:=Tenda 3G300M
 	PACKAGES:=\
-		kmod-usb-core kmod-usb-rt305x-dwc_otg \
+		kmod-usb-core kmod-usb-dwc2 \
 		kmod-ledtrig-usbdev
 endef
 

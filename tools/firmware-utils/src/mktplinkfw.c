@@ -30,6 +30,7 @@
 #define ALIGN(x,a) ({ typeof(a) __a = (a); (((x) + __a - 1) & ~(__a - 1)); })
 
 #define HEADER_VERSION_V1	0x01000000
+#define HWID_ANTMINER_S1	0x04440001
 #define HWID_GL_INET_V1		0x08000001
 #define HWID_GS_OOLITE_V1	0x3C000101
 #define HWID_TL_MR10U_V1	0x00100101
@@ -40,6 +41,8 @@
 #define HWID_TL_MR3420_V1	0x34200001
 #define HWID_TL_MR3420_V2	0x34200002
 #define HWID_TL_WA701N_V1	0x07010001
+#define HWID_TL_WA701N_V2	0x07010002
+#define HWID_TL_WA7210N_V2	0x72100002
 #define HWID_TL_WA7510N_V1	0x75100001
 #define HWID_TL_WA801ND_V1	0x08010001
 #define HWID_TL_WA830RE_V1	0x08300010
@@ -51,6 +54,7 @@
 #define HWID_TL_WDR4900_V1	0x49000001
 #define HWID_TL_WR703N_V1	0x07030101
 #define HWID_TL_WR720N_V3	0x07200103
+#define HWID_TL_WR720N_V4	0x07200104
 #define HWID_TL_WR741ND_V1	0x07410001
 #define HWID_TL_WR741ND_V4	0x07410004
 #define HWID_TL_WR740N_V1	0x07400001
@@ -146,6 +150,7 @@ static uint32_t rootfs_align;
 static struct file_info boot_info;
 static int combined;
 static int strip_padding;
+static int ignore_size;
 static int add_jffs2_eof;
 static unsigned char jffs2_eof_mark[4] = {0xde, 0xad, 0xc0, 0xde};
 static uint32_t fw_max_len;
@@ -253,6 +258,16 @@ static struct board_info boards[] = {
 		.hw_id		= HWID_TL_WA701N_V1,
 		.hw_rev		= 1,
 		.layout_id	= "4M",
+	}, {
+		.id		= "TL-WA701Nv2",
+		.hw_id		= HWID_TL_WA701N_V2,
+		.hw_rev		= 1,
+		.layout_id	= "4Mlzma",
+	}, {
+		.id		= "TL-WA7210N",
+		.hw_id		= HWID_TL_WA7210N_V2,
+		.hw_rev		= 2,
+		.layout_id	= "4Mlzma",
 	}, {
 		.id		= "TL-WA7510N",
 		.hw_id		= HWID_TL_WA7510N_V1,
@@ -389,6 +404,11 @@ static struct board_info boards[] = {
 		.hw_rev		= 1,
 		.layout_id	= "4Mlzma",
 	}, {
+		.id		= "TL-WR720Nv4",
+		.hw_id		= HWID_TL_WR720N_V4,
+		.hw_rev		= 1,
+		.layout_id	= "4Mlzma",
+	}, {
 		.id		= "GL-INETv1",
 		.hw_id		= HWID_GL_INET_V1,
 		.hw_rev		= 1,
@@ -398,6 +418,11 @@ static struct board_info boards[] = {
 		.hw_id		= HWID_GS_OOLITE_V1,
 		.hw_rev		= 1,
 		.layout_id	= "16Mlzma",
+	}, {
+		.id		= "ANTMINER-S1",
+		.hw_id		= HWID_ANTMINER_S1,
+		.hw_rev		= 1,
+		.layout_id	= "8Mlzma",
 	}, {
 		/* terminating entry */
 	}
@@ -489,6 +514,7 @@ static void usage(int status)
 "  -R <offset>     overwrite rootfs offset with <offset> (hexval prefixed with 0x)\n"
 "  -o <file>       write output to the file <file>\n"
 "  -s              strip padding from the end of the image\n"
+"  -S              ignore firmware size limit (only for combined images)\n"
 "  -j              add jffs2 end-of-filesystem markers\n"
 "  -N <vendor>     set image vendor to <vendor>\n"
 "  -V <version>    set image version to <version>\n"
@@ -633,8 +659,13 @@ static int check_options(void)
 	if (combined) {
 		if (kernel_info.file_size >
 		    fw_max_len - sizeof(struct fw_header)) {
-			ERR("kernel image is too big");
-			return -1;
+			if (!ignore_size) {
+				ERR("kernel image is too big");
+				return -1;
+			}
+			layout->fw_max_len = sizeof(struct fw_header) +
+					     kernel_info.file_size +
+					     reserved_space;
 		}
 	} else {
 		if (rootfs_info.file_name == NULL) {
@@ -1069,7 +1100,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "a:B:H:E:F:L:V:N:W:ci:k:r:R:o:xX:hsjv:");
+		c = getopt(argc, argv, "a:B:H:E:F:L:V:N:W:ci:k:r:R:o:xX:hsSjv:");
 		if (c == -1)
 			break;
 
@@ -1121,6 +1152,9 @@ int main(int argc, char *argv[])
 			break;
 		case 's':
 			strip_padding = 1;
+			break;
+		case 'S':
+			ignore_size = 1;
 			break;
 		case 'i':
 			inspect_info.file_name = optarg;

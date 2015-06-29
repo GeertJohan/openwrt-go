@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013 OpenWrt.org
+# Copyright (C) 2013-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,13 +8,18 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=u-boot
-PKG_VERSION:=2014.01-rc1
+PKG_VERSION:=2015.01
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://mirror2.openwrt.org/sources \
 	ftp://ftp.denx.de/pub/u-boot
-PKG_SOURCE_VERSION:=1552fe43c3e827d56c9cd212fba3dcba
+
+PKG_MD5SUM:=7f08dc9e98a71652bd6968888ed6ec95
+
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
+
+PKG_LICENSE:=GPL-2.0 GPL-2.0+
+PKG_LICENSE_FILES:=Licenses/README
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -25,46 +30,76 @@ define uboot/Default
 endef
 
 define uboot/A10-OLinuXino-Lime
-  TITLE:=U-Boot 2014.01-rc1 for the A10 OLinuXino LIME
+  TITLE:=U-Boot for the A10 OLinuXino LIME
 endef
 
 define uboot/A13-OLinuXino
-  TITLE:=U-Boot 2014.01-rc1 for the A13 OlinuXino
+  TITLE:=U-Boot for the A13 OlinuXino
+endef
+
+define uboot/A20-OLinuXino-Lime
+  TITLE:=U-Boot for the A20 OLinuXino LIME
 endef
 
 define uboot/A20-OLinuXino_MICRO
-  TITLE:=U-Boot 2014.01-rc1 for A20 OLinuXino MICRO
+  TITLE:=U-Boot for A20 OLinuXino MICRO
 endef
 
-define uboot/bananapi
-  TITLE:=U-Boot 2014.01-rc1 for BananaPi
+define uboot/Bananapi
+  TITLE:=U-Boot for Bananapi
+endef
+
+define uboot/Bananapro
+  TITLE:=U-Boot for Bananapro
 endef
 
 define uboot/Cubieboard
-  TITLE:=U-Boot 2014.01-rc1 for Cubieboard
+  TITLE:=U-Boot for Cubieboard
 endef
 
 define uboot/Cubieboard2
-  TITLE:=U-Boot 2014.01-rc1 for Cubieboard2
+  TITLE:=U-Boot for Cubieboard2
 endef
 
 define uboot/Cubietruck
-  TITLE:=U-Boot 2014.01-rc1 for Cubietruck
+  TITLE:=U-Boot for Cubietruck
 endef
 
-define uboot/Hackberry
-  TITLE:=U-Boot 2014.01-rc1 for the Hackbeery
+define uboot/Mele_M9
+  TITLE:=U-Boot for the Mele M9 (A31)
 endef
 
-define uboot/pcDuino
-  TITLE:=U-Boot 2014.01-rc1 for pcDuino
+define uboot/OLIMEX_A13_SOM
+  TITLE:=U-Boot for the Olimex A13 SOM
+endef
+
+define uboot/Linksprite_pcDuino
+  TITLE:=U-Boot for Linksprite pcDuino
 endef  
 
-define uboot/pcDuino3
-  TITLE:=U-Boot 2014.01-rc1 for pcDuino3
+define uboot/Linksprite_pcDuino3
+  TITLE:=U-Boot for Linksprite pcDuino3
 endef  
 
-UBOOTS:=A10-OLinuXino-Lime A13-OLinuXino A20-OLinuXino_MICRO bananapi Cubieboard Cubieboard2 Cubietruck Hackberry pcDuino pcDuino3
+define uboot/Lamobo_R1
+  TITLE:=U-Boot for Lamobo R1
+endef
+
+UBOOTS:= \
+	A10-OLinuXino-Lime \
+	A13-OLinuXino \
+	A20-OLinuXino-Lime \
+	A20-OLinuXino_MICRO \
+	Bananapi \
+	Bananapro \
+	Cubieboard \
+	Cubieboard2 \
+	Cubietruck \
+	Mele_M9 \
+	OLIMEX_A13_SOM \
+	Linksprite_pcDuino \
+	Linksprite_pcDuino3 \
+	Lamobo_R1 \
 
 define Package/uboot/template
 define Package/uboot-sunxi-$(1)
@@ -92,7 +127,7 @@ endif
 
 define Build/Configure
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		USE_PRIVATE_LIBGCC=yes $(UBOOT_CONFIG)_config
+		USE_PRIVATE_LIBGCC=yes $(UBOOT_CONFIG)_defconfig
 endef
 
 define Build/Compile
@@ -110,6 +145,7 @@ define Package/uboot/install/default
 		$(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-u-boot-with-spl.bin
 	$(CP) uEnv.txt \
 		$(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-uEnv.txt
+	mkimage -C none -A arm -T script -d $(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-uEnv.txt $(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-boot.scr
 endef
 
 define Package/uboot/install/template

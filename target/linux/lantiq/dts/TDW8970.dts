@@ -65,14 +65,14 @@
 			>;
 			interrupt-parent = <&icu0>;
 			interrupts = <73 72>;
-			lantiq,switch;
 
 			lan: interface@0 {
 				compatible = "lantiq,xrx200-pdi";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				reg = <0>;
-				mac-address = [ 00 11 22 33 44 55 ];
+				mtd-mac-address = <&ath9k_cal 0xf100>;
+				lantiq,switch;
 
 				ethernet@0 {
 					compatible = "lantiq,xrx200-pdi-port";
@@ -128,6 +128,11 @@
 			status = "okay";
 			gpios = <&gpio 33 0>;
 			lantiq,portmask = <0x3>;
+		};
+
+		ifxhcd@E106000 {
+			status = "okay";
+			gpios = <&gpio 33 0>;
 		};
 	};
 
@@ -194,6 +199,8 @@
 	ath9k_eep {
 		compatible = "ath9k,eeprom";
 		ath,eep-flash = <&ath9k_cal 0x21000>;
+		ath,mac-offset = <0xf100>;
+		ath,mac-increment;
 		ath,led-pin = <0>;
 	};
 
@@ -202,10 +209,10 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <100>;
-		power {
+		reset {
 			label = "reset";
 			gpios = <&gpio 0 1>;
-			linux,code = <0x100>;
+			linux,code = <0x198>;
 		};
 
 		wifi {

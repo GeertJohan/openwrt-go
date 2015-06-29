@@ -7,11 +7,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mkimage
-PKG_VERSION:=2014.04
+PKG_VERSION:=2014.10
 
 PKG_SOURCE:=u-boot-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=ftp://ftp.denx.de/pub/u-boot
-PKG_MD5SUM:=6d2116d1385a66e9a59742caa9d62a54
+PKG_SOURCE_URL:=\
+	http://mirror2.openwrt.org/sources \
+	ftp://ftp.denx.de/pub/u-boot
+PKG_MD5SUM:=3ddcaee2f05b7c464778112ec83664b5
 PKG_CAT:=bzcat
 
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/u-boot-$(PKG_VERSION)
@@ -29,9 +31,8 @@ define Host/Prepare
 endef
 
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR) \
-		HOSTLDFLAGS="$(HOST_STATIC_LINKING)" \
-		tools-only
+	$(MAKE) -C $(HOST_BUILD_DIR) defconfig
+	$(MAKE) -C $(HOST_BUILD_DIR) tools-only
 endef
 
 define Host/Install

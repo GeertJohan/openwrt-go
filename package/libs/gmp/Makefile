@@ -13,15 +13,17 @@ PKG_REVISION:=a
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)$(PKG_REVISION).tar.xz
-PKG_SOURCE_URL:=ftp://ftp.gmplib.org/pub/$(PKG_NAME)/
+PKG_SOURCE_URL:=http://gmplib.org/download/gmp/
 PKG_MD5SUM:=1e6da4e434553d2811437aa42c7f7c76
 
 PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
 PKG_FIXUP:=autoreconf
+PKG_LICENSE:=GPL-2.0+
 
 PKG_USE_MIPS16:=0
 
+include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libgmp
@@ -44,7 +46,6 @@ CONFIGURE_ARGS += \
 	--without-readline \
 	--disable-fft \
 
-
 define Build/Compile
 	$(call Build/Compile/Default, \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
@@ -66,3 +67,4 @@ define Package/libgmp/install
 endef
 
 $(eval $(call BuildPackage,libgmp))
+$(eval $(call HostBuild))

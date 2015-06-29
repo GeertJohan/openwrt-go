@@ -120,8 +120,6 @@ VG3503J)
 	;;
 
 DGN3500*)
-	lan_mac=$(mtd_get_mac_ascii uboot-env ethaddr)
-	wan_mac=$(macaddr_add "$lan_mac" 1)
 	ucidef_set_interface_lan "eth0.1"
 	ucidef_add_switch "switch0" "1" "1"
 	ucidef_add_switch_vlan "switch0" "1" "3 2 1 0 5t"
@@ -145,7 +143,9 @@ P2601HNFX)
 	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5t"
 	;;
 
-P2812HNUFX)
+P2812HNUF*)
+	lan_mac=$(mtd_get_mac_ascii uboot-env ethaddr)
+	wan_mac=$(macaddr_add "$lan_mac" 1)
 	ucidef_set_interface_lan 'eth0.1'
 	ucidef_add_switch "switch0" "1" "1"
 	ucidef_add_switch_vlan "switch0" "1" "0 1 2 4 5 6t"
@@ -154,17 +154,34 @@ P2812HNUFX)
 TDW8970)
 	lan_mac=$(mtd_get_mac_binary boardconfig 61696)
 	wan_mac=$(macaddr_add "$lan_mac" 1)
+	ucidef_set_interface_lan 'eth0.1'
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 2 4 5 6t"
 	;;
 
-ARV7519*)
+ARV7519RW22)
 	lan_mac=$(mtd_get_mac_binary boardconfig 22)
 	wan_mac=$(macaddr_add "$lan_mac" 1)
 	;;
 
-BTHOMEHUBV2B)
+BTHOMEHUBV2B|BTHOMEHUBV3A)
 	lan_mac=$(mtd_get_mac_ascii uboot_env ethaddr)
 	wan_mac=$(macaddr_add "$lan_mac" 1)
 	;;
+
+VGV7519)
+	lan_mac=$(mtd_get_mac_binary board_config 22)
+	wan_mac=$(macaddr_add "$lan_mac" 1)
+	;;
+
+VGV7510KW22)
+	lan_mac=$(mtd_get_mac_binary board_config 22)
+	wan_mac=$(macaddr_add "$lan_mac" 1)
+	ucidef_set_interface_lan 'eth0.1'
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "2 3 4 5 6t"
+	;;
+
 esac
 
 [ -z "$(ls /lib/modules/`uname -r`/ltq_atm*)" ] || set_atm_wan "$vpi" "$vci" "$encaps" "$payload"

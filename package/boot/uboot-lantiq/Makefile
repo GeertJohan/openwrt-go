@@ -19,6 +19,9 @@ PKG_SOURCE_URL:= \
 PKG_MD5SUM:=a076a044b64371edc52f7e562b13f6b2
 PKG_TARGETS:=bin
 
+PKG_LICENSE:=GPL-2.0 GPL-2.0+
+PKG_LICENSE_FILES:=Licenses/README
+
 PKG_BUILD_PARALLEL:=1
 
 FIRMWARE_LANTIQ_SOURCE:=$(TOPDIR)/target/linux/lantiq/files/firmware/lantiq
@@ -244,16 +247,34 @@ define uboot/p2812hnufx_ram
   TITLE:=U-Boot for ZyXEL P-2812HNU-Fx (RAM)
   SOC:=vr9
   DDR_SETTINGS:=board/zyxel/p2812hnufx/ddr_settings.h
-  DEPS:=@TARGET_lantiq_xrx200_P2812HNUFX
+  DEPS:=@TARGET_lantiq_xrx200_P2812HNUF1||@TARGET_lantiq_xrx200_P2812HNUF3
 endef
 
 define uboot/p2812hnufx_nandspl
   TITLE:=U-Boot for ZyXEL P-2812HNU-Fx (NAND SPL)
   SOC:=vr9
   IMAGE:=u-boot.ltq.lzo.nandspl
-  DEPS:=@TARGET_lantiq_xrx200_P2812HNUFX
+  DEPS:=@TARGET_lantiq_xrx200_P2812HNUF1||@TARGET_lantiq_xrx200_P2812HNUF3
 endef
 
+define uboot/vgv7510kw22_brn
+  TITLE:=U-Boot for Arcadyan VGV7510KW22 (BRN)
+  SOC:=vr9
+  DEPS:=@TARGET_lantiq_xrx200_VGV7510KW22NOR||@TARGET_lantiq_xrx200_VGV7510KW22BRN
+endef
+
+define uboot/vgv7510kw22_nor
+  TITLE:=U-Boot for Arcadyan VGV7510KW22 (NOR)
+  SOC:=vr9
+  DEPS:=@TARGET_lantiq_xrx200_VGV7510KW22NOR||@TARGET_lantiq_xrx200_VGV7510KW22BRN
+endef
+
+define uboot/vgv7510kw22_ram
+  TITLE:=U-Boot for Arcadyan VGV7510KW22 (RAM)
+  SOC:=vr9
+  DDR_SETTINGS:=board/arcadyan/vgv7510kw22/ddr_settings.h
+  DEPS:=@TARGET_lantiq_xrx200_VGV7510KW22NOR||@TARGET_lantiq_xrx200_VGV7510KW22BRN
+endef
 
 UBOOTS:= \
 	arv4519pw_ram arv4519pw_nor arv4519pw_brn \
@@ -267,7 +288,8 @@ UBOOTS:= \
 	easy50712_ram easy50712_nor easy50712_norspl \
 	easy80920_ram easy80920_nor easy80920_norspl easy80920_sfspl \
 	fb3370_eva fb3370_ram fb3370_sfspl \
-	p2812hnufx_ram p2812hnufx_nandspl
+	p2812hnufx_ram p2812hnufx_nandspl \
+	vgv7510kw22_brn vgv7510kw22_nor vgv7510kw22_ram
 
 define Package/uboot/template
 define Package/uboot-lantiq-$(1)

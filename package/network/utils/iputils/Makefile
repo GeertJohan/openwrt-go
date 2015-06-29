@@ -16,6 +16,7 @@ PKG_SOURCE_URL:=http://www.skbuff.net/iputils
 PKG_MD5SUM:=a36c25e9ec17e48be514dc0485e7376c
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+PKG_LICENSE:=GPL-2.0+
 
 PKG_BUILD_DEPENDS:=sysfsutils
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-s$(PKG_VERSION)
@@ -67,7 +68,7 @@ endef
 define Package/iputils-ping6
 $(call Package/iputils/Default)
   TITLE:=iputils - ping6
-  DEPENDS+= @IPV6 +USE_EGLIBC:libopenssl
+  DEPENDS+= @IPV6 +USE_GLIBC:libopenssl
 endef
 
 define Package/iputils-ping6/description
@@ -121,10 +122,14 @@ define Package/iputils-traceroute6/description
   Traces path to a network host (IPv6).
 endef
 
+ifdef CONFIG_USE_MUSL
+  TARGET_CFLAGS += -D__UCLIBC__
+endif
+
 MAKE_FLAGS += \
 	CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) $(TARGET_LDFLAGS)" \
 	CONFIG_IPV6="$(CONFIG_IPV6)" \
-	CONFIG_USE_UCLIBC="$(CONFIG_USE_UCLIBC)" \
+	CONFIG_USE_UCLIBC="$(CONFIG_USE_UCLIBC)$(CONFIG_USE_MUSL)" \
 
 define Package/iputils-arping/install
 	$(INSTALL_DIR) $(1)/usr/bin

@@ -18,11 +18,11 @@ config TARGET_PREINIT_SUPPRESS_STDERR
 	default y
 	help
 		Sends stderr to null during preinit.  This is the default behaviour
-		in previous versions of OpenWRT.  This also prevents init process
+		in previous versions of OpenWrt.  This also prevents init process
 		itself from displaying stderr, however processes launched by init
 		in multiuser through inittab will use the current terminal (e.g.
 		the ash shell launched by inittab will display stderr).  That's
-		the same behaviour as seen in previous version of OpenWRT.
+		the same behaviour as seen in previous version of OpenWrt.
 
 config TARGET_PREINIT_TIMEOUT
 	int
@@ -128,7 +128,7 @@ menuconfig INITOPT
 		help
 			Prevents showing stderr messages for init command if not already
 			suppressed during preinit.  This is the default behaviour in
-			previous versions of OpenWRT.  Removing this does nothing if
+			previous versions of OpenWrt.  Removing this does nothing if
 			stderr is suppressed during preinit (which is the default).
 
 
@@ -142,24 +142,26 @@ menuconfig VERSIONOPT
 		they're useful for release builds or custom OpenWrt redistributions
 		that should carry custom version tags.
 
+if VERSIONOPT
+
 	config VERSION_DIST
 		string
-		prompt "Release distribution" if VERSIONOPT
-		default "OpenWrt" if VERSIONOPT
+		prompt "Release distribution"
+		default "OpenWrt"
 		help
 			This is the name of the release distribution.
 			If unspecified, it defaults to OpenWrt.
 
 	config VERSION_NICK
 		string
-		prompt "Release version nickname" if VERSIONOPT
+		prompt "Release version nickname"
 		help
 			This is the release codename embedded in the image.
 			If unspecified, it defaults to the name of source branch.
 
 	config VERSION_NUMBER
 		string
-		prompt "Release version number" if VERSIONOPT
+		prompt "Release version number"
 		help
 			This is the release version number embedded in the image.
 			If unspecified, it defaults to the svn or git-svn revision
@@ -167,8 +169,8 @@ menuconfig VERSIONOPT
 
 	config VERSION_REPO
 		string
-		prompt "Release repository" if VERSIONOPT
-		default "http://downloads.openwrt.org/snapshots/trunk/%T/packages" if VERSIONOPT
+		prompt "Release repository"
+		default "http://downloads.openwrt.org/snapshots/trunk/%S/packages"
 		help
 			This is the repository address embedded in the image, it defaults
 			to the trunk snapshot repo; the url may contain the following placeholders:
@@ -183,6 +185,65 @@ menuconfig VERSIONOPT
 			 %d .. Distribution name or "openwrt", lowercase
 			 %T .. Target name
 			 %S .. Target/Subtarget name
+			 %t .. Build taint flags, e.g. "no-all busybox"
+			 %M .. Manufacturer name or "OpenWrt"
+			 %P .. Product name or "Generic"
+			 %h .. Hardware revision or "v0"
+
+	config VERSION_MANUFACTURER
+		string
+		prompt "Manufacturer name"
+		help
+			This is the manufacturer name embedded in /etc/device_info
+			Useful for OEMs building OpenWrt based firmware
+
+	config VERSION_PRODUCT
+		string
+		prompt "Product name"
+		help
+			This is the product name embedded in /etc/device_info
+			Useful for OEMs building OpenWrt based firmware
+
+	config VERSION_HWREV
+		string
+		prompt "Hardware revision"
+		help
+			This is the hardware revision string embedded in /etc/device_info
+			Useful for OEMs building OpenWrt based firmware
+
+	config VERSION_FILENAMES
+		bool
+		prompt "Version number in filenames"
+		default y
+		help
+			Enable this to include the version number in firmware image, SDK-
+			and Image Builder archive file names
+endif
+
+
+menuconfig PER_FEED_REPO
+	bool "Separate feed repositories" if IMAGEOPT
+	default y
+	help
+		If set, a separate repository is generated within bin/*/packages/
+		for the core packages and each enabled feed.
+
+	config PER_FEED_REPO_ADD_DISABLED
+		bool "Add available but not enabled feeds to opkg.conf"
+		default y
+		depends on PER_FEED_REPO
+		help
+		  Add not installed or disabled feeds from feeds.conf to opkg.conf.
+
+	config PER_FEED_REPO_ADD_COMMENTED
+		bool "Comment out not enabled feeds"
+		default y
+		depends on PER_FEED_REPO && PER_FEED_REPO_ADD_DISABLED
+		help
+		  Add not enabled feeds as commented out source lines to opkg.conf.
+
+source "tmp/.config-feeds.in"
+
 
 menuconfig SMIMEOPT
 	bool "Package signing options" if IMAGEOPT
